@@ -73,7 +73,7 @@ const GenAIAssistant = ({ mode }) => {
 
     } catch (error) {
       console.error("Fetch error:", error);
-      return "Network error connecting to Hugging Face API.";
+      return "Network error connecting to Hugging Face. This usually means the free AI model is 'waking up' on their servers (which takes about 30 seconds). Please try asking your question again!";
     }
   };
 

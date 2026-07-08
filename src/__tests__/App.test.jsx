@@ -6,7 +6,11 @@ import OpsDashboard from '../components/OpsDashboard';
 
 describe('Smart Stadium Application - Redesign', () => {
   test('renders the new OpsDashboard shell', () => {
-    render(<App />);
+    render(
+      <MemoryRouter>
+        <App />
+      </MemoryRouter>
+    );
     expect(screen.getByText(/Ask the stadium/i)).toBeInTheDocument();
     expect(screen.getByText(/what happens next/i)).toBeInTheDocument();
     expect(screen.getAllByText(/PITCHSIDE/i)[0]).toBeInTheDocument();

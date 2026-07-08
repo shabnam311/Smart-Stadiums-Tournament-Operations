@@ -1,17 +1,25 @@
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
-:root{
-  --bg:#101317;
-  --surface:#171b21;
-  --surface-2:#1d222a;
-  --line:#272d37;
-  --turf:#3fae6a;
-  --turf-dim:#2c7a4c;
-  --amber:#d99a3d;
-  --red:#c85c4a;
-  --text:#e7e9ec;
-  --text-dim:#8b929e;
-  --text-faint:#565d68;
+:root {
+  --bg: #101317;
+  --surface: #171b21;
+  --surface-2: #1d222a;
+  --line: #272d37;
+  
+  /* Primary Accent: Purple */
+  --turf: #b388ff; 
+  --turf-dim: #7e57c2;
+  
+  /* Secondary Accents */
+  --amber: #ffeb3b;  /* Yellow */
+  --red: #ff5252;    /* Red for critical alerts */
+  --blue: #40c4ff;   /* Blue */
+  --green: #69f0ae;  /* Green */
+  
+  /* Text & A11y Contrast Improvements */
+  --text: #ffffff;
+  --text-dim: #b0b8c4;
+  --text-faint: #8a94a1; /* Brightened for WCAG AA contrast */
 }
 
 *{box-sizing:border-box; margin:0; padding:0;}

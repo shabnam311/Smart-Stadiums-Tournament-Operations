@@ -11,21 +11,24 @@ const initialZones = [
   { name:"Section H — North-West", occ:1750, cap:2400, rate:12, med:"Gate A3 · 100m", acc:"2 of 2", level:"low" },
 ];
 
-const colors = { low:"var(--green)", med:"var(--amber)", high:"var(--red)" };
+const colors = { low: 'var(--c-access)', med: 'var(--c-transit)', high: 'var(--c-incident)' };
 
-const polarToXY = (cx, cy, r, angleDeg) => {
-  const a = (angleDeg - 90) * Math.PI / 180;
-  return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+const arcPath = (cx, cy, rOut, rIn, startAngle, endAngle) => {
+  const startOut = [cx + rOut * Math.cos(startAngle * Math.PI / 180), cy + rOut * Math.sin(startAngle * Math.PI / 180)];
+  const endOut = [cx + rOut * Math.cos(endAngle * Math.PI / 180), cy + rOut * Math.sin(endAngle * Math.PI / 180)];
+  const startIn = [cx + rIn * Math.cos(startAngle * Math.PI / 180), cy + rIn * Math.sin(startAngle * Math.PI / 180)];
+  const endIn = [cx + rIn * Math.cos(endAngle * Math.PI / 180), cy + rIn * Math.sin(endAngle * Math.PI / 180)];
+  const largeArc = endAngle - startAngle <= 180 ? 0 : 1;
+  return `M ${startOut[0]} ${startOut[1]} A ${rOut} ${rOut} 0 ${largeArc} 1 ${endOut[0]} ${endOut[1]} L ${endIn[0]} ${endIn[1]} A ${rIn} ${rIn} 0 ${largeArc} 0 ${startIn[0]} ${startIn[1]} Z`;
 };
 
-const arcPath = (cx, cy, rOuter, rInner, startAngle, endAngle) => {
-  const [x1,y1] = polarToXY(cx, cy, rOuter, startAngle);
-  const [x2,y2] = polarToXY(cx, cy, rOuter, endAngle);
-  const [x3,y3] = polarToXY(cx, cy, rInner, endAngle);
-  const [x4,y4] = polarToXY(cx, cy, rInner, startAngle);
-  const large = (endAngle - startAngle) > 180 ? 1 : 0;
-  return `M${x1},${y1} A${rOuter},${rOuter} 0 ${large} 1 ${x2},${y2} L${x3},${y3} A${rInner},${rInner} 0 ${large} 0 ${x4},${y4} Z`;
-};
+// We will map these template zones to the real capacity dynamically.
+const templateZones = [
+  { name: 'Section A — North', rate: 15, med: 'Gate A1 - 40m', acc: '3 of 4', level: 'low' },
+  { name: 'Section B — South', rate: 18, med: 'Gate B2 - 80m', acc: '4 of 4', level: 'med' },
+  { name: 'Section C — East', rate: 22, med: 'Gate C1 - 60m', acc: '2 of 3', level: 'high' },
+  { name: 'Section D — West', rate: 12, med: 'Gate D4 - 30m', acc: '4 of 4', level: 'low' },
+];
 
 const initialIncidents = [
   { sev:"high", title:"Congestion building at Gate C turnstiles", time:"18:04", meta:"Est. 6 min delay · Marshal dispatched", tag:"Access" },
@@ -40,9 +43,20 @@ const initialInsights = [
 ];
 
 const MainContent = () => {
+  const { venue } = useOutletContext();
   const [time, setTime] = useState('--:--:--');
   const [activeZone, setActiveZone] = useState(2);
-  const [zonesData, setZonesData] = useState(initialZones);
+  
+  // Calculate dynamic zones based on real venue capacity
+  const [zonesData, setZonesData] = useState(() => {
+    const baseCap = Math.floor(venue.capacity / templateZones.length);
+    return templateZones.map((z, i) => {
+      // Simulate an initial occupancy based on their level
+      const pct = z.level === 'high' ? 0.9 : z.level === 'med' ? 0.7 : 0.4;
+      return { ...z, cap: baseCap, occ: Math.floor(baseCap * pct) };
+    });
+  });
+
   const [incidents, setIncidents] = useState(initialIncidents);
   const [insights, setInsights] = useState(initialInsights);
 

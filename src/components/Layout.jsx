@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
+import venues from '../data/venues.json';
 
 const Layout = () => {
   const location = useLocation();
   const [weather, setWeather] = useState('29°');
   const [weatherIcon, setWeatherIcon] = useState('🌤️');
+  const activeVenue = venues[0]; // Default to MetLife Stadium
 
   useEffect(() => {
-    // Live Weather Integration for New York / New Jersey Stadium Location
-    fetch('https://api.open-meteo.com/v1/forecast?latitude=40.81&longitude=-74.07&current_weather=true')
+    // Live Weather Integration using REAL venue coordinates
+    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${activeVenue.lat}&longitude=${activeVenue.lon}&current_weather=true`)
       .then(res => res.json())
       .then(data => {
         if (data && data.current_weather) {
@@ -16,7 +18,7 @@ const Layout = () => {
         }
       })
       .catch(err => console.error("Weather fetch failed, falling back to mock", err));
-  }, []);
+  }, [activeVenue]);
 
   return (
     <div className="wrap">
@@ -58,7 +60,7 @@ const Layout = () => {
 
       {/* Renders the specific page */}
       <div style={{ marginTop: location.pathname === '/' ? '0' : '40px', minHeight: '60vh' }}>
-        <Outlet />
+        <Outlet context={{ venue: activeVenue }} />
       </div>
 
       <section className="info-grid" style={{ marginTop: '40px' }}>

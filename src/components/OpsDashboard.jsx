@@ -51,12 +51,6 @@ const OpsDashboard = () => {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         ></textarea>
-        <div className="chips-row">
-          <span className="try-label">TRY →</span>
-          <button className="chip" onClick={() => handleChipClick("Is Gate C likely to congest before kickoff?")}>GATE C RISK</button>
-          <button className="chip" onClick={() => handleChipClick("Which section will be fullest by second half?")}>2ND-HALF FORECAST</button>
-          <button className="chip" onClick={() => handleChipClick("Best accessible route to Section D right now?")}>ACCESS ROUTE</button>
-        </div>
         <div className="action-row">
           <button className="btn-run" onClick={handleRunQuery} disabled={isLoading}>
             {isLoading ? "▸ RUNNING..." : "▸ RUN QUERY"}

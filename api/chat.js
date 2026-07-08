@@ -25,19 +25,27 @@ export default async function handler(req, res) {
 
   // Ungated, fast instruct model
   const model = "Qwen/Qwen2.5-1.5B-Instruct";
-  const prompt = `<|im_start|>system\nYou are an Ops Intelligence AI for stadium staff. Keep answers to 1-2 concise sentences, focusing on actionable data.<|im_end|>\n<|im_start|>user\n${message}<|im_end|>\n<|im_start|>assistant\n`;
 
   try {
-    const hfRes = await fetch(`https://router.huggingface.co/hf-inference/models/${model}`, {
+    const hfRes = await fetch("https://router.huggingface.co/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${hfToken}`,
+        "Authorization": `Bearer ${hfToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ inputs: prompt, parameters: { max_new_tokens: 100, temperature: 0.7 } }),
+      body: JSON.stringify({
+        model: model,
+        messages: [
+          { role: "system", content: "You are an Ops Intelligence AI for stadium staff. Keep answers to 1-2 concise sentences, focusing on actionable data." },
+          { role: "user", content: message }
+        ],
+        max_tokens: 100,
+        temperature: 0.7
+      }),
     });
 
     if (!hfRes.ok) {
+      // Typically 401 Unauthorized or 429 Too Many Requests
       return res.status(200).json({ reply: getMockResponse(message), mode: 'demo' });
     }
 
@@ -46,13 +54,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ reply: getMockResponse(message), mode: 'demo' });
     }
 
-    let generatedText = result[0]?.generated_text || "";
-    // Clean up specific instruct markers
-    const assistantSplit = generatedText.split("<|im_start|>assistant\n");
-    let reply = assistantSplit.length > 1 ? assistantSplit[1].trim() : generatedText.trim();
-    
-    // Remove trailing tokens if any
-    reply = reply.replace("<|im_end|>", "").trim();
+    const reply = result.choices[0]?.message?.content?.trim();
 
     if (!reply) {
       return res.status(200).json({ reply: getMockResponse(message), mode: 'demo' });

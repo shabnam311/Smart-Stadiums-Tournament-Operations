@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const zonesData = [
+const initialZones = [
   { name:"Section A — North Stand", occ:2140, cap:2600, rate:18, med:"Gate B2 · 90m", acc:"3 of 3", level:"med" },
   { name:"Section B — North-East", occ:1980, cap:2400, rate:14, med:"Gate B2 · 140m", acc:"2 of 2", level:"low" },
   { name:"Section C — East Stand", occ:2510, cap:2600, rate:22, med:"Gate C1 · 60m", acc:"2 of 3", level:"high" },
@@ -11,7 +11,7 @@ const zonesData = [
   { name:"Section H — North-West", occ:1750, cap:2400, rate:12, med:"Gate A3 · 100m", acc:"2 of 2", level:"low" },
 ];
 
-const colors = { low:"#2c7a4c", med:"#d99a3d", high:"#c85c4a" };
+const colors = { low:"var(--green)", med:"var(--amber)", high:"var(--red)" };
 
 const polarToXY = (cx, cy, r, angleDeg) => {
   const a = (angleDeg - 90) * Math.PI / 180;
@@ -27,13 +27,13 @@ const arcPath = (cx, cy, rOuter, rInner, startAngle, endAngle) => {
   return `M${x1},${y1} A${rOuter},${rOuter} 0 ${large} 1 ${x2},${y2} L${x3},${y3} A${rInner},${rInner} 0 ${large} 0 ${x4},${y4} Z`;
 };
 
-const incidents = [
+const initialIncidents = [
   { sev:"high", title:"Congestion building at Gate C turnstiles", time:"18:04", meta:"Est. 6 min delay · Marshal dispatched", tag:"Access" },
   { sev:"med",  title:"Minor medical — dehydration, Section E", time:"17:52", meta:"Attended · monitoring", tag:"Medical" },
   { sev:"low",  title:"Signage misaligned near Gate A3", time:"17:31", meta:"Logged for post-match maintenance", tag:"Facilities" },
 ];
 
-const insights = [
+const initialInsights = [
   { time:"18:05", text:"Entry rate at Gate C is 22/min against a 15/min comfortable threshold. Recommend opening auxiliary turnstiles C4–C6 for the next 20 minutes." , actionable:true},
   { time:"17:58", text:"Section G density trending toward 92% by second half. Suggest pre-positioning two additional marshals at the West Stand concourse." , actionable:true},
   { time:"17:40", text:"Multilingual assist requests up 3x in Spanish and Portuguese over the last 30 minutes, concentrated near Gate B. Consider routing a bilingual volunteer there." , actionable:false},
@@ -42,14 +42,31 @@ const insights = [
 const MainContent = () => {
   const [time, setTime] = useState('--:--:--');
   const [activeZone, setActiveZone] = useState(2);
+  const [zonesData, setZonesData] = useState(initialZones);
+  const [incidents, setIncidents] = useState(initialIncidents);
+  const [insights, setInsights] = useState(initialInsights);
 
   useEffect(() => {
-    const tick = () => {
-      setTime(new Date().toLocaleTimeString('en-GB'));
-    };
+    // Clock tick
+    const tick = () => setTime(new Date().toLocaleTimeString('en-GB'));
     tick();
-    const interval = setInterval(tick, 1000);
-    return () => clearInterval(interval);
+    const clockInterval = setInterval(tick, 1000);
+
+    // Simulate Live Data Changes every 3 seconds
+    const dataInterval = setInterval(() => {
+      setZonesData(prevZones => prevZones.map(zone => {
+        const occChange = Math.floor(Math.random() * 21) - 10; // -10 to +10 change
+        let newOcc = Math.max(0, Math.min(zone.cap, zone.occ + occChange));
+        let pct = newOcc / zone.cap;
+        let newLevel = pct > 0.85 ? 'high' : pct > 0.6 ? 'med' : 'low';
+        return { ...zone, occ: newOcc, level: newLevel };
+      }));
+    }, 3000);
+
+    return () => {
+      clearInterval(clockInterval);
+      clearInterval(dataInterval);
+    };
   }, []);
 
   const z = zonesData[activeZone];
@@ -78,7 +95,7 @@ const MainContent = () => {
         </div>
         <div className="kpi">
           <div className="kpi-label">Open Incidents</div>
-          <div className="kpi-value">3</div>
+          <div className="kpi-value">{incidents.length}</div>
           <div className="kpi-delta warn">1 flagged high</div>
         </div>
         <div className="kpi">
@@ -98,9 +115,9 @@ const MainContent = () => {
           <div className="panel-head">
             <div className="panel-title">Crowd Density — <b>Stadium Bowl</b></div>
             <div className="legend">
-              <span><i style={{background:"#2c7a4c"}}></i>Low</span>
-              <span><i style={{background:"#d99a3d"}}></i>Moderate</span>
-              <span><i style={{background:"#c85c4a"}}></i>High</span>
+              <span><i style={{background:"var(--green)"}}></i>Low</span>
+              <span><i style={{background:"var(--amber)"}}></i>Moderate</span>
+              <span><i style={{background:"var(--red)"}}></i>High</span>
             </div>
           </div>
           <div className="bowl-wrap">
@@ -137,7 +154,7 @@ const MainContent = () => {
         <div className="panel">
           <div className="panel-head">
             <div className="panel-title">Incident Log</div>
-            <span className="tag">3 open</span>
+            <span className="tag">{incidents.length} open</span>
           </div>
           <div>
             {incidents.map((inc, i) => (
@@ -145,7 +162,12 @@ const MainContent = () => {
                 <div className={`sev ${inc.sev}`}></div>
                 <div className="incident-body">
                   <div className="incident-top">
-                    <div className="incident-title">{inc.title}</div>
+                    <div className="incident-title">
+                      {inc.sev === 'high' && <span className="sr-only">High Severity: </span>}
+                      {inc.sev === 'med' && <span className="sr-only">Medium Severity: </span>}
+                      {inc.sev === 'low' && <span className="sr-only">Low Severity: </span>}
+                      {inc.title}
+                    </div>
                     <div className="incident-time mono">{inc.time}</div>
                   </div>
                   <div className="incident-meta">{inc.meta}</div>

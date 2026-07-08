@@ -13,7 +13,7 @@ export default async function handler(req, res) {
   // Fallback Mock Logic
   const getMockResponse = (msg) => {
     const lowerMessage = msg.toLowerCase();
-    if (lowerMessage.includes('gate c')) return "Yes — entry rate at Gate C is running 22/min against a 15/min comfortable threshold. Recommend opening auxiliary turnstiles C4–C6 now.";
+    if (lowerMessage.includes('gate c')) return "Yes, entry rate at Gate C is running 22/min against a 15/min comfortable threshold. Recommend opening auxiliary turnstiles C4-C6 now.";
     if (lowerMessage.includes('second half')) return "Section G (West Stand) is trending toward 92% occupancy by second half. Consider pre-positioning two additional marshals at the West concourse.";
     if (lowerMessage.includes('route')) return "The ramp at Gate 4 is clear with no stairs. It's currently the shortest accessible route to Section D.";
     return "Mock Mode: No live signal configured for this query yet.";

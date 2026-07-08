@@ -91,7 +91,7 @@ const MainContent = () => {
       <div className="main-head">
         <div>
           <div className="main-title">Operations Overview</div>
-          <div className="main-sub">FIFA World Cup 2026 · Challenge 4 — Smart Stadiums &amp; Tournament Operations</div>
+          <div className="main-sub">FIFA World Cup 2026 - Challenge 4 - Smart Stadiums &amp; Tournament Operations</div>
         </div>
         <div className="updated">Last synced <b className="mono">{time}</b></div>
       </div>

@@ -27,10 +27,6 @@ const Layout = () => {
           <div className="logo-mark"></div>
           <div className="logo-text">PITCHSIDE · <b>OPS</b></div>
         </div>
-        <div className="nav-pills">
-          <span className="pill live">LIVE DATA</span>
-          <span className="pill">FREE-TIER GENAI</span>
-        </div>
         <div className="nav-links">
           <Link to="/" style={{ color: location.pathname === '/' ? 'var(--accent)' : '' }}>AI PROXY</Link>
           <Link to="/overview" style={{ color: location.pathname === '/overview' ? 'var(--accent)' : '' }}>OVERVIEW</Link>

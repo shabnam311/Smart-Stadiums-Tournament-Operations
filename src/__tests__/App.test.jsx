@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import App from '../App';
 import OpsDashboard from '../components/OpsDashboard';
 
@@ -12,7 +13,11 @@ describe('Smart Stadium Application - Redesign', () => {
   });
 
   test('OpsDashboard handles query input and chips', () => {
-    render(<OpsDashboard />);
+    render(
+      <MemoryRouter>
+        <OpsDashboard />
+      </MemoryRouter>
+    );
     const textarea = screen.getByPlaceholderText(/Ask about crowd flow/i);
     fireEvent.change(textarea, { target: { value: 'Is Gate C congested?' } });
     expect(textarea.value).toBe('Is Gate C congested?');
@@ -24,7 +29,11 @@ describe('Smart Stadium Application - Redesign', () => {
   });
 
   test('OpsDashboard clears query', () => {
-    render(<OpsDashboard />);
+    render(
+      <MemoryRouter>
+        <OpsDashboard />
+      </MemoryRouter>
+    );
     const textarea = screen.getByPlaceholderText(/Ask about crowd flow/i);
     fireEvent.change(textarea, { target: { value: 'Hello' } });
     

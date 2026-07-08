@@ -5,7 +5,7 @@ import venues from '../data/venues.json';
 const Layout = () => {
   const location = useLocation();
   const [weather, setWeather] = useState('29°');
-  const [weatherIcon'] = useState('🌤️');
+  const [weatherIcon, setWeatherIcon] = useState('🌤️');
   const activeVenue = venues[0]; // Default to MetLife Stadium
 
   useEffect(() => {
@@ -62,7 +62,7 @@ const Layout = () => {
       <section className="info-grid" style={{ marginTop: '40px' }}>
         <div className="info-block">
           <div className="label">MODEL & DATA</div>
-          <p>AI runs on a <b>free-tier ungated model</b> (Qwen 1.5B) via Hugging Face. Weather data is pulled live via <b>Open-Meteo</b> ({weather} {weatherIcon'] = useState('🌤️');
+          <p>AI runs on a <b>free-tier ungated model</b> (Qwen 1.5B) via Hugging Face. Weather data is pulled live via <b>Open-Meteo</b> ({weather} {weatherIcon} currently). Gracefully falls back to demo mode if limits are reached.</p>
         </div>
         <div className="info-block">
           <div className="label">DEPLOYMENT</div>
@@ -71,7 +71,7 @@ const Layout = () => {
       </section>
 
       <footer>
-        <span>PITCHSIDE · <b>OPS</b></div>
+        <span>PITCHSIDE · OPS · 2026 · DEMO</span>
         <div className="foot-links">
           <a href="#">GITHUB</a>
           <a href="#">MODEL CARD</a>

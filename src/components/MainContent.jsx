@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 
 const initialZones = [
-  { name:"Section A — North Stand", occ:2140, cap:2600, rate:18, med:"Gate B2 · 90m", acc:"3 of 3", level:"med" },
-  { name:"Section B — North-East", occ:1980, cap:2400, rate:14, med:"Gate B2 · 140m", acc:"2 of 2", level:"low" },
-  { name:"Section C — East Stand", occ:2510, cap:2600, rate:22, med:"Gate C1 · 60m", acc:"2 of 3", level:"high" },
-  { name:"Section D — South-East", occ:1870, cap:2400, rate:11, med:"Gate C3 · 110m", acc:"2 of 2", level:"low" },
-  { name:"Section E — South Stand", occ:2020, cap:2600, rate:16, med:"Gate D1 · 80m", acc:"3 of 3", level:"med" },
-  { name:"Section F — South-West", occ:1690, cap:2400, rate:9,  med:"Gate D3 · 130m", acc:"2 of 2", level:"low" },
-  { name:"Section G — West Stand", occ:2380, cap:2600, rate:20, med:"Gate A1 · 70m", acc:"3 of 3", level:"high" },
-  { name:"Section H — North-West", occ:1750, cap:2400, rate:12, med:"Gate A3 · 100m", acc:"2 of 2", level:"low" },
+  { name:"Section A - North Stand", occ:2140, cap:2600, rate:18, med:"Gate B2 · 90m", acc:"3 of 3", level:"med" },
+  { name:"Section B - North-East", occ:1980, cap:2400, rate:14, med:"Gate B2 · 140m", acc:"2 of 2", level:"low" },
+  { name:"Section C - East Stand", occ:2510, cap:2600, rate:22, med:"Gate C1 · 60m", acc:"2 of 3", level:"high" },
+  { name:"Section D - South-East", occ:1870, cap:2400, rate:11, med:"Gate C3 · 110m", acc:"2 of 2", level:"low" },
+  { name:"Section E - South Stand", occ:2020, cap:2600, rate:16, med:"Gate D1 · 80m", acc:"3 of 3", level:"med" },
+  { name:"Section F - South-West", occ:1690, cap:2400, rate:9,  med:"Gate D3 · 130m", acc:"2 of 2", level:"low" },
+  { name:"Section G - West Stand", occ:2380, cap:2600, rate:20, med:"Gate A1 · 70m", acc:"3 of 3", level:"high" },
+  { name:"Section H - North-West", occ:1750, cap:2400, rate:12, med:"Gate A3 · 100m", acc:"2 of 2", level:"low" },
 ];
 
 const colors = { low: 'var(--c-access)', med: 'var(--c-transit)', high: 'var(--c-incident)' };
@@ -24,20 +25,20 @@ const arcPath = (cx, cy, rOut, rIn, startAngle, endAngle) => {
 
 // We will map these template zones to the real capacity dynamically.
 const templateZones = [
-  { name: 'Section A — North', rate: 15, med: 'Gate A1 - 40m', acc: '3 of 4', level: 'low' },
-  { name: 'Section B — South', rate: 18, med: 'Gate B2 - 80m', acc: '4 of 4', level: 'med' },
-  { name: 'Section C — East', rate: 22, med: 'Gate C1 - 60m', acc: '2 of 3', level: 'high' },
-  { name: 'Section D — West', rate: 12, med: 'Gate D4 - 30m', acc: '4 of 4', level: 'low' },
+  { name: 'Section A - North', rate: 15, med: 'Gate A1 - 40m', acc: '3 of 4', level: 'low' },
+  { name: 'Section B - South', rate: 18, med: 'Gate B2 - 80m', acc: '4 of 4', level: 'med' },
+  { name: 'Section C - East', rate: 22, med: 'Gate C1 - 60m', acc: '2 of 3', level: 'high' },
+  { name: 'Section D - West', rate: 12, med: 'Gate D4 - 30m', acc: '4 of 4', level: 'low' },
 ];
 
 const initialIncidents = [
   { sev:"high", title:"Congestion building at Gate C turnstiles", time:"18:04", meta:"Est. 6 min delay · Marshal dispatched", tag:"Access" },
-  { sev:"med",  title:"Minor medical — dehydration, Section E", time:"17:52", meta:"Attended · monitoring", tag:"Medical" },
+  { sev:"med",  title:"Minor medical - dehydration, Section E", time:"17:52", meta:"Attended · monitoring", tag:"Medical" },
   { sev:"low",  title:"Signage misaligned near Gate A3", time:"17:31", meta:"Logged for post-match maintenance", tag:"Facilities" },
 ];
 
 const initialInsights = [
-  { time:"18:05", text:"Entry rate at Gate C is 22/min against a 15/min comfortable threshold. Recommend opening auxiliary turnstiles C4–C6 for the next 20 minutes." , actionable:true},
+  { time:"18:05", text:"Entry rate at Gate C is 22/min against a 15/min comfortable threshold. Recommend opening auxiliary turnstiles C4-C6 for the next 20 minutes." , actionable:true},
   { time:"17:58", text:"Section G density trending toward 92% by second half. Suggest pre-positioning two additional marshals at the West Stand concourse." , actionable:true},
   { time:"17:40", text:"Multilingual assist requests up 3x in Spanish and Portuguese over the last 30 minutes, concentrated near Gate B. Consider routing a bilingual volunteer there." , actionable:false},
 ];
@@ -127,7 +128,7 @@ const MainContent = () => {
       <div className="grid">
         <div className="panel">
           <div className="panel-head">
-            <div className="panel-title">Crowd Density — <b>Stadium Bowl</b></div>
+            <div className="panel-title">Crowd Density - <b>Stadium Bowl</b></div>
             <div className="legend">
               <span><i style={{background:"var(--green)"}}></i>Low</span>
               <span><i style={{background:"var(--amber)"}}></i>Moderate</span>
@@ -196,7 +197,7 @@ const MainContent = () => {
       <div className="grid" style={{ gridTemplateColumns: '1fr', marginTop: '16px' }}>
         <div className="panel">
           <div className="panel-head">
-            <div className="panel-title">Ops Intelligence Feed <b>— GenAI</b></div>
+            <div className="panel-title">Ops Intelligence Feed <b>- GenAI</b></div>
             <span className="tag">Auto-generated</span>
           </div>
           <div>

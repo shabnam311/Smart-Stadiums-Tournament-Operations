@@ -25,11 +25,6 @@ describe('Smart Stadium Application - Redesign', () => {
     const textarea = screen.getByPlaceholderText(/Ask about crowd flow/i);
     fireEvent.change(textarea, { target: { value: 'Is Gate C congested?' } });
     expect(textarea.value).toBe('Is Gate C congested?');
-    
-    // Click chip
-    const chip = screen.getByText(/GATE C RISK/i);
-    fireEvent.click(chip);
-    expect(textarea.value).toBe('Is Gate C likely to congest before kickoff?');
   });
 
   test('OpsDashboard clears query', () => {

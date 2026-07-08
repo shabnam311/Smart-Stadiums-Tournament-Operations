@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Message is required' });
   }
 
-  const hfToken = process.env.VITE_HF_TOKEN;
+  const hfToken = process.env.HF_TOKEN;
   
   if (!hfToken || hfToken === 'your_hugging_face_token_here') {
     // Fallback Mock Logic if token is missing (ensures the demo always works)
@@ -21,11 +21,11 @@ export default async function handler(req, res) {
     return res.status(200).json({ reply: mockResponse });
   }
 
-  const model = "HuggingFaceH4/zephyr-7b-beta";
+  const model = "meta-llama/Llama-3.2-3B-Instruct";
   const prompt = `<|system|>\nYou are an Ops Intelligence AI for stadium staff. Keep answers to 1-2 concise sentences, focusing on actionable data.</s>\n<|user|>\n${message}</s>\n<|assistant|>\n`;
 
   try {
-    const hfRes = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
+    const hfRes = await fetch(`https://router.huggingface.co/hf-inference/models/${model}`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${hfToken}`,

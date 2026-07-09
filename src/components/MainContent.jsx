@@ -1,29 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 
-const initialZones = [
-  { name:"Section A - North Stand", occ:2140, cap:2600, rate:18, med:"Gate B2 · 90m", acc:"3 of 3", level:"med" },
-  { name:"Section B - North-East", occ:1980, cap:2400, rate:14, med:"Gate B2 · 140m", acc:"2 of 2", level:"low" },
-  { name:"Section C - East Stand", occ:2510, cap:2600, rate:22, med:"Gate C1 · 60m", acc:"2 of 3", level:"high" },
-  { name:"Section D - South-East", occ:1870, cap:2400, rate:11, med:"Gate C3 · 110m", acc:"2 of 2", level:"low" },
-  { name:"Section E - South Stand", occ:2020, cap:2600, rate:16, med:"Gate D1 · 80m", acc:"3 of 3", level:"med" },
-  { name:"Section F - South-West", occ:1690, cap:2400, rate:9,  med:"Gate D3 · 130m", acc:"2 of 2", level:"low" },
-  { name:"Section G - West Stand", occ:2380, cap:2600, rate:20, med:"Gate A1 · 70m", acc:"3 of 3", level:"high" },
-  { name:"Section H - North-West", occ:1750, cap:2400, rate:12, med:"Gate A3 · 100m", acc:"2 of 2", level:"low" },
-];
-
-const colors = { low: 'var(--c-access)', med: 'var(--c-transit)', high: 'var(--c-incident)' };
-
-const arcPath = (cx, cy, rOut, rIn, startAngle, endAngle) => {
-  const startOut = [cx + rOut * Math.cos(startAngle * Math.PI / 180), cy + rOut * Math.sin(startAngle * Math.PI / 180)];
-  const endOut = [cx + rOut * Math.cos(endAngle * Math.PI / 180), cy + rOut * Math.sin(endAngle * Math.PI / 180)];
-  const startIn = [cx + rIn * Math.cos(startAngle * Math.PI / 180), cy + rIn * Math.sin(startAngle * Math.PI / 180)];
-  const endIn = [cx + rIn * Math.cos(endAngle * Math.PI / 180), cy + rIn * Math.sin(endAngle * Math.PI / 180)];
-  const largeArc = endAngle - startAngle <= 180 ? 0 : 1;
-  return `M ${startOut[0]} ${startOut[1]} A ${rOut} ${rOut} 0 ${largeArc} 1 ${endOut[0]} ${endOut[1]} L ${endIn[0]} ${endIn[1]} A ${rIn} ${rIn} 0 ${largeArc} 0 ${startIn[0]} ${startIn[1]} Z`;
-};
-
-// We will map these template zones to the real capacity dynamically.
 const templateZones = [
   { name: 'Section A - North', rate: 15, med: 'Gate A1 - 40m', acc: '3 of 4', level: 'low' },
   { name: 'Section B - South', rate: 18, med: 'Gate B2 - 80m', acc: '4 of 4', level: 'med' },
@@ -32,8 +9,8 @@ const templateZones = [
 ];
 
 const initialIncidents = [
-  { sev:"high", title:"Congestion building at Gate C turnstiles", time:"18:04", meta:"Est. 6 min delay · Marshal dispatched", tag:"Access" },
-  { sev:"med",  title:"Minor medical - dehydration, Section E", time:"17:52", meta:"Attended · monitoring", tag:"Medical" },
+  { sev:"high", title:"Congestion building at Gate C turnstiles", time:"18:04", meta:"Est. 6 min delay - Marshal dispatched", tag:"Access" },
+  { sev:"med",  title:"Minor medical - dehydration, Section E", time:"17:52", meta:"Attended - monitoring", tag:"Medical" },
   { sev:"low",  title:"Signage misaligned near Gate A3", time:"17:31", meta:"Logged for post-match maintenance", tag:"Facilities" },
 ];
 
@@ -46,31 +23,26 @@ const initialInsights = [
 const MainContent = () => {
   const { venue } = useOutletContext();
   const [time, setTime] = useState('--:--:--');
-  const [activeZone, setActiveZone] = useState(2);
   
-  // Calculate dynamic zones based on real venue capacity
   const [zonesData, setZonesData] = useState(() => {
     const baseCap = Math.floor(venue.capacity / templateZones.length);
-    return templateZones.map((z, i) => {
-      // Simulate an initial occupancy based on their level
+    return templateZones.map((z) => {
       const pct = z.level === 'high' ? 0.9 : z.level === 'med' ? 0.7 : 0.4;
       return { ...z, cap: baseCap, occ: Math.floor(baseCap * pct) };
     });
   });
 
-  const [incidents, setIncidents] = useState(initialIncidents);
-  const [insights, setInsights] = useState(initialInsights);
+  const [incidents] = useState(initialIncidents);
+  const [insights] = useState(initialInsights);
 
   useEffect(() => {
-    // Clock tick
     const tick = () => setTime(new Date().toLocaleTimeString('en-GB'));
     tick();
     const clockInterval = setInterval(tick, 1000);
 
-    // Simulate Live Data Changes every 3 seconds
     const dataInterval = setInterval(() => {
       setZonesData(prevZones => prevZones.map(zone => {
-        const occChange = Math.floor(Math.random() * 21) - 10; // -10 to +10 change
+        const occChange = Math.floor(Math.random() * 21) - 10;
         let newOcc = Math.max(0, Math.min(zone.cap, zone.occ + occChange));
         let pct = newOcc / zone.cap;
         let newLevel = pct > 0.85 ? 'high' : pct > 0.6 ? 'med' : 'low';
@@ -84,9 +56,6 @@ const MainContent = () => {
     };
   }, []);
 
-  const z = zonesData[activeZone];
-  const pct = Math.round((z.occ / z.cap) * 100);
-
   return (
     <main className="main">
       <div className="main-head">
@@ -94,131 +63,116 @@ const MainContent = () => {
           <div className="main-title">Operations Overview</div>
           <div className="main-sub">FIFA World Cup 2026 - Challenge 4 - Smart Stadiums &amp; Tournament Operations</div>
         </div>
-        <div className="updated">Last synced <b className="mono">{time}</b></div>
-      </div>
-
-      <div className="kpi-row">
-        <div className="kpi">
-          <div className="kpi-label">Occupancy</div>
-          <div className="kpi-value">71<small>%</small></div>
-          <div className="kpi-delta up">↑ 6% vs. last hour</div>
-        </div>
-        <div className="kpi">
-          <div className="kpi-label">Avg. Entry Wait</div>
-          <div className="kpi-value">4<small>min</small></div>
-          <div className="kpi-delta up">↓ 1.5 min</div>
-        </div>
-        <div className="kpi">
-          <div className="kpi-label">Open Incidents</div>
-          <div className="kpi-value">{incidents.length}</div>
-          <div className="kpi-delta warn">1 flagged high</div>
-        </div>
-        <div className="kpi">
-          <div className="kpi-label">Staff on Duty</div>
-          <div className="kpi-value">128</div>
-          <div className="kpi-delta">of 140 rostered</div>
-        </div>
-        <div className="kpi">
-          <div className="kpi-label">Waste Diverted</div>
-          <div className="kpi-value">62<small>%</small></div>
-          <div className="kpi-delta up">Target 60%</div>
+        <div className="updated" style={{fontFamily:'IBM Plex Mono', fontSize:'11px', color:'var(--text-faint)'}}>
+          Last synced <b style={{color:'var(--text-dim)'}}>{time}</b>
         </div>
       </div>
 
-      <div className="grid">
+      <section className="panels" style={{marginBottom: '20px'}}>
         <div className="panel">
           <div className="panel-head">
-            <div className="panel-title">Crowd Density - <b>Stadium Bowl</b></div>
-            <div className="legend">
-              <span><i style={{background:"var(--green)"}}></i>Low</span>
-              <span><i style={{background:"var(--amber)"}}></i>Moderate</span>
-              <span><i style={{background:"var(--red)"}}></i>High</span>
-            </div>
+            <div className="panel-title"><span className="bar"></span>KEY PERFORMANCE INDICATORS</div>
           </div>
-          <div className="bowl-wrap">
-            <svg className="bowl-map" width="260" height="260" viewBox="0 0 260 260">
-              <circle className="pitch" cx="130" cy="130" r="58"/>
-              {zonesData.map((zone, i) => {
-                const segAngle = 360 / zonesData.length;
-                const start = i * segAngle;
-                const end = start + segAngle - 3;
-                return (
-                  <path 
-                    key={i}
-                    d={arcPath(130, 130, 118, 68, start, end)}
-                    className={`zone ${i === activeZone ? 'selected' : ''}`}
-                    fill={colors[zone.level]}
-                    onClick={() => setActiveZone(i)}
-                  />
-                )
-              })}
-            </svg>
-            <div className="zone-detail">
-              <div className="zd-name">{z.name}</div>
-              <div className="zd-row"><span className="zd-label">Current occupancy</span><span className="zd-val">{z.occ.toLocaleString()} / {z.cap.toLocaleString()}</span></div>
-              <div className="zd-row"><span className="zd-label">Entry rate</span><span className="zd-val">{z.rate} / min</span></div>
-              <div className="zd-row"><span className="zd-label">Nearest medical post</span><span className="zd-val">{z.med}</span></div>
-              <div className="zd-row"><span className="zd-label">Accessible routes open</span><span className="zd-val">{z.acc}</span></div>
-              <div>
-                <div className="zd-bar-track"><div className="zd-bar-fill" style={{ width: `${pct}%`, background: colors[z.level] }}></div></div>
-              </div>
+          
+          <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px'}}>
+            <div>
+              <div className="label">Occupancy</div>
+              <div style={{fontSize: '24px', fontWeight: '500', color: 'var(--text)'}}>71% <span style={{fontSize: '12px', color: 'var(--c-access)'}}>↑ 6% vs. last hour</span></div>
+            </div>
+            <div>
+              <div className="label">Avg. Entry Wait</div>
+              <div style={{fontSize: '24px', fontWeight: '500', color: 'var(--text)'}}>4 min <span style={{fontSize: '12px', color: 'var(--c-access)'}}>↓ 1.5 min</span></div>
+            </div>
+            <div>
+              <div className="label">Open Incidents</div>
+              <div style={{fontSize: '24px', fontWeight: '500', color: 'var(--text)'}}>{incidents.length} <span style={{fontSize: '12px', color: 'var(--c-incident)'}}>1 flagged high</span></div>
+            </div>
+            <div>
+              <div className="label">Waste Diverted</div>
+              <div style={{fontSize: '24px', fontWeight: '500', color: 'var(--text)'}}>62% <span style={{fontSize: '12px', color: 'var(--c-access)'}}>Target 60%</span></div>
             </div>
           </div>
         </div>
 
         <div className="panel">
           <div className="panel-head">
-            <div className="panel-title">Incident Log</div>
-            <span className="tag">{incidents.length} open</span>
+            <div className="panel-title"><span className="bar"></span>CROWD DENSITY (STADIUM BOWL)</div>
           </div>
-          <div>
-            {incidents.map((inc, i) => (
-              <div key={i} className="incident">
-                <div className={`sev ${inc.sev}`}></div>
-                <div className="incident-body">
-                  <div className="incident-top">
-                    <div className="incident-title">
-                      {inc.sev === 'high' && <span className="sr-only">High Severity: </span>}
-                      {inc.sev === 'med' && <span className="sr-only">Medium Severity: </span>}
-                      {inc.sev === 'low' && <span className="sr-only">Low Severity: </span>}
-                      {inc.title}
-                    </div>
-                    <div className="incident-time mono">{inc.time}</div>
+          {zonesData.map((z, i) => {
+            const pct = Math.round((z.occ / z.cap) * 100);
+            const color = z.level === 'high' ? 'var(--c-incident)' : z.level === 'med' ? 'var(--c-transit)' : 'var(--c-access)';
+            const label = z.level === 'high' ? 'HIGH RISK' : z.level === 'med' ? 'MODERATE' : 'COMFORTABLE';
+            return (
+              <div key={i} style={{marginBottom: '16px'}}>
+                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px'}}>
+                  <strong style={{color: 'var(--text)', fontSize: '14px'}}>{z.name}</strong>
+                  <div className="resp-tag" style={{borderColor: color, color: color, margin: 0}}>
+                    <i style={{background: color}}></i>{label}
                   </div>
-                  <div className="incident-meta">{inc.meta}</div>
-                  <span className="tag">{inc.tag}</span>
+                </div>
+                <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-dim)', marginBottom: '6px'}}>
+                  <span>{z.occ.toLocaleString()} / {z.cap.toLocaleString()} capacity</span>
+                  <span>{pct}%</span>
+                </div>
+                <div style={{width: '100%', height: '4px', background: 'var(--line)', borderRadius: '2px', overflow: 'hidden'}}>
+                  <div style={{width: `${pct}%`, height: '100%', background: color, transition: 'width 0.5s ease'}}></div>
                 </div>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
-      </div>
+      </section>
 
-      <div className="grid" style={{ gridTemplateColumns: '1fr', marginTop: '16px' }}>
+      <section className="panels">
         <div className="panel">
           <div className="panel-head">
-            <div className="panel-title">Ops Intelligence Feed <b>- GenAI</b></div>
-            <span className="tag">Auto-generated</span>
+            <div className="panel-title"><span className="bar"></span>INCIDENT LOG</div>
           </div>
-          <div>
-            {insights.map((ins, i) => (
-              <div key={i} className="insight">
-                <div className="insight-head">
-                  <span className="insight-src">Recommendation</span>
-                  <span className="insight-time mono">{ins.time}</span>
-                </div>
-                <div className="insight-text">{ins.text}</div>
-                {ins.actionable && (
-                  <div className="insight-actions">
-                    <button className="btn-mini primary">Dispatch</button>
-                    <button className="btn-mini">Dismiss</button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+          {incidents.map((inc, i) => {
+             const color = inc.sev === 'high' ? 'var(--c-incident)' : inc.sev === 'med' ? 'var(--c-transit)' : 'var(--c-access)';
+             return (
+               <div key={i} style={{marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid var(--line-soft)'}}>
+                 <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px'}}>
+                   <div className="resp-tag" style={{borderColor: color, color: color, margin: 0}}>
+                     <i style={{background: color}}></i>{inc.sev.toUpperCase()} SEVERITY
+                   </div>
+                   <div style={{fontFamily: 'IBM Plex Mono', fontSize: '11px', color: 'var(--text-faint)'}}>{inc.time}</div>
+                 </div>
+                 <div className="resp-text" style={{minHeight: 'auto'}}>
+                   <strong style={{color: 'var(--text)'}}>{inc.title}</strong><br/>
+                   {inc.meta}
+                 </div>
+               </div>
+             );
+          })}
         </div>
-      </div>
+
+        <div className="panel">
+          <div className="panel-head">
+            <div className="panel-title"><span className="bar"></span>OPS INTELLIGENCE FEED (GENAI)</div>
+          </div>
+          {insights.map((ins, i) => (
+             <div key={i} style={{marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid var(--line-soft)'}}>
+               <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px'}}>
+                 <div className="resp-tag" style={{borderColor: 'var(--c-crowd)', color: 'var(--c-crowd)', margin: 0}}>
+                   <i style={{background: 'var(--c-crowd)'}}></i>RECOMMENDATION
+                 </div>
+                 <div style={{fontFamily: 'IBM Plex Mono', fontSize: '11px', color: 'var(--text-faint)'}}>{ins.time}</div>
+               </div>
+               <div className="resp-text" style={{minHeight: 'auto', marginBottom: '12px'}}>
+                 {ins.text}
+               </div>
+               {ins.actionable && (
+                 <div className="action-row" style={{marginTop: 0}}>
+                   <button className="btn-run" style={{padding: '6px 12px', fontSize: '10px'}}>DISPATCH</button>
+                   <button className="btn-ghost" style={{padding: '6px 12px', fontSize: '10px'}}>DISMISS</button>
+                 </div>
+               )}
+             </div>
+          ))}
+        </div>
+      </section>
+
     </main>
   );
 };

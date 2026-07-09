@@ -27,8 +27,12 @@ export default async function handler(req, res) {
   const model = "Qwen/Qwen2.5-1.5B-Instruct";
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
     const hfRes = await fetch("https://router.huggingface.co/v1/chat/completions", {
       method: "POST",
+      signal: controller.signal,
       headers: {
         "Authorization": `Bearer ${hfToken}`,
         "Content-Type": "application/json",
@@ -43,6 +47,7 @@ export default async function handler(req, res) {
         temperature: 0.7
       }),
     });
+    clearTimeout(timeoutId);
 
     if (!hfRes.ok) {
       // Typically 401 Unauthorized or 429 Too Many Requests

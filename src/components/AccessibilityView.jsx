@@ -9,31 +9,51 @@ const AccessibilityView = () => {
           <div className="main-sub">Wheelchair routes, sensory rooms, and specialized assistance</div>
         </div>
       </div>
-      <div className="panels">
-        <div className="panel-ops">
+      <section className="panels">
+        <div className="panel">
           <div className="panel-head">
             <div className="panel-title"><span className="bar"></span>ACCESSIBILITY ROUTES</div>
           </div>
-          <div className="resp-text" style={{ padding: '20px', border: '1px solid var(--line)', borderRadius: '6px', background: 'var(--surface-2)' }}>
-            <h3 style={{ marginBottom: '10px', color: 'var(--turf)' }}>Ramp Access - Gate 4</h3>
-            <p style={{ color: 'var(--text-dim)', marginBottom: '16px' }}>Status: Clear and Operational. Nearest access to Section D.</p>
-            <h3 style={{ marginBottom: '10px', color: 'var(--turf)' }}>Elevator Bank C</h3>
-            <p style={{ color: 'var(--text-dim)' }}>Status: Operational. Servicing East Stand upper tiers.</p>
+          
+          <div className="resp-tag" style={{borderColor: 'var(--c-access)', color: 'var(--c-access)', marginBottom: '16px'}}>
+            <i style={{background: 'var(--c-access)'}}></i>OPERATIONAL
+          </div>
+          <div className="resp-text" style={{marginBottom: '24px'}}>
+            <strong style={{color: 'var(--text)'}}>Ramp Access - Gate 4</strong><br/>
+            Status: Clear and Operational. Nearest access to Section D.
+          </div>
+
+          <div className="resp-tag" style={{borderColor: 'var(--c-access)', color: 'var(--c-access)', marginBottom: '16px'}}>
+            <i style={{background: 'var(--c-access)'}}></i>OPERATIONAL
+          </div>
+          <div className="resp-text">
+            <strong style={{color: 'var(--text)'}}>Elevator Bank C</strong><br/>
+            Status: Operational. Servicing East Stand upper tiers.
           </div>
         </div>
 
-        <div className="panel-ops">
+        <div className="panel">
           <div className="panel-head">
             <div className="panel-title"><span className="bar"></span>SENSORY ROOMS & ASSISTANCE</div>
           </div>
-          <div className="resp-text" style={{ padding: '20px', border: '1px solid var(--line)', borderRadius: '6px', background: 'var(--surface-2)' }}>
-            <h3 style={{ marginBottom: '10px', color: 'var(--blue)' }}>Sensory Room A (West Concourse)</h3>
-            <p style={{ color: 'var(--text-dim)' }}>Currently at 40% capacity. Quiet zone maintained.</p>
-            <h3 style={{ marginBottom: '10px', marginTop: '16px', color: 'var(--blue)' }}>Multilingual Volunteers</h3>
-            <p style={{ color: 'var(--text-dim)' }}>12 volunteers currently active. Highest demand in Spanish and Portuguese near Gate B.</p>
+          
+          <div className="resp-tag" style={{borderColor: 'var(--c-crowd)', color: 'var(--c-crowd)', marginBottom: '16px'}}>
+            <i style={{background: 'var(--c-crowd)'}}></i>CAPACITY 40%
+          </div>
+          <div className="resp-text" style={{marginBottom: '24px'}}>
+            <strong style={{color: 'var(--text)'}}>Sensory Room A (West Concourse)</strong><br/>
+            Quiet zone maintained.
+          </div>
+
+          <div className="resp-tag" style={{borderColor: 'var(--c-crowd)', color: 'var(--c-crowd)', marginBottom: '16px'}}>
+            <i style={{background: 'var(--c-crowd)'}}></i>12 ACTIVE
+          </div>
+          <div className="resp-text">
+            <strong style={{color: 'var(--text)'}}>Multilingual Volunteers</strong><br/>
+            Highest demand in Spanish and Portuguese near Gate B.
           </div>
         </div>
-      </div>
+      </section>
     </main>
   );
 };

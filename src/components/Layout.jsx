@@ -14,7 +14,7 @@ const Layout = () => {
       .then(res => res.json())
       .then(data => {
         if (data && data.current_weather) {
-          setWeather(`${Math.round(data.current_weather.temperature)}°);°`);
+          setWeather(`${Math.round(data.current_weather.temperature)}°`);
         }
       })
       .catch(err => console.error("Weather fetch failed, falling back to mock", err));

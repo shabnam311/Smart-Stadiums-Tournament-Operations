@@ -7,7 +7,7 @@ It aggregates crowd density, incident tracking, staff deployment, and an AI-powe
 ## Key Features
 
 1. **Serverless AI Proxy (Vercel Functions)**
-   The live Fan Assistant preview relies on a serverless Vercel function (`api/chat.js`) to securely query a Hugging Face LLM (Llama 3.2 3B Instruct) without exposing API tokens to the client bundle.
+   The live Fan Assistant preview relies on a serverless Vercel function (`api/chat.js`) to securely query a Hugging Face LLM (Qwen/Qwen2.5-1.5B-Instruct) without exposing API tokens to the client bundle.
 2. **Simulated Live Data via React Hooks**
    Static data has been replaced with dynamic React `useState` and `useEffect` hooks, simulating real-time fluctuations in crowd density and entry rates.
 3. **Automated Unit Testing**

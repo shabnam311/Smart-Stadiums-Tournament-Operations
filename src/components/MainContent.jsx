@@ -32,8 +32,8 @@ const MainContent = () => {
     });
   });
 
-  const [incidents] = useState(initialIncidents);
-  const [insights] = useState(initialInsights);
+  const incidents = initialIncidents;
+  const insights = initialInsights;
 
   useEffect(() => {
     const tick = () => setTime(new Date().toLocaleTimeString('en-GB'));

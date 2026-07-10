@@ -43,7 +43,7 @@ const Layout = () => {
             <span className="label">OPERATIONS INTELLIGENCE · FIFA WORLD CUP 2026</span>
           </div>
           <h1>Ask the stadium<br/><em>what happens next.</em></h1>
-          <p className="hero-sub">A GenAI layer over your venue's live signals. Query crowd flow, incidents, transit, and access in plain language - get a decision, not another dashboard.</p>
+          <p className="hero-sub">Built for venue operations staff during live matches. Query crowd flow, incidents, transit, and accessibility in plain language - get a decision with reasoning, not another dashboard.</p>
 
           <div className="legend">
             <div className="legend-item"><span className="legend-dot" style={{background:"var(--c-crowd)"}}></span><span>CROWD FLOW</span></div>

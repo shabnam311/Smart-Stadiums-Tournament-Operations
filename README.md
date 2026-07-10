@@ -4,6 +4,14 @@ PITCHSIDE is a high-performance, real-time command center UI built specifically 
 
 It aggregates crowd density, incident tracking, staff deployment, and an AI-powered Ops Intelligence preview into a single pane of glass, allowing staff to ask the stadium "what happens next" and get reasoning-based decisions.
 
+## How This Solves PromptWars Challenge 4
+This project was built specifically for **Hack2Skill PromptWars Challenge 4: Smart Stadiums & Tournament Operations**. The challenge requires a GenAI-enabled solution that enhances the tournament experience for venue staff during the FIFA World Cup 2026. 
+
+Here is how PITCHSIDE nails the criteria:
+- **Operational Intelligence & Real-time Decision Support:** Instead of a generic chatbot, this is a tactical engine. Staff query the AI about specific incidents (e.g., "Gate C is congested"), and the AI reasons about crowd density, weather, and incidents to give actionable recommendations.
+- **Crowd Management:** Live-updating stadium zones and wait-time KPIs provide a direct response to the crowd management requirement.
+- **Sustainability & Accessibility:** Built-in tracking for "Waste Diverted" and medical/accessibility incidents directly aligns with the challenge's core themes.
+
 ## Key Features
 
 1. **Free Tier AI via Google Gemma 4**

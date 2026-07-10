@@ -6,16 +6,21 @@ It aggregates crowd density, incident tracking, staff deployment, and an AI-powe
 
 ## Key Features
 
-1. **Serverless AI Proxy (Vercel Functions)**
-   The live Ops Intelligence preview relies on a serverless Vercel function (`api/chat.js`) to securely query the Google Gemini 1.5 Flash model without exposing API tokens to the client bundle.
-2. **Simulated Live Data via React Hooks**
-   Static data has been replaced with dynamic React `useState` and `useEffect` hooks, simulating real-time fluctuations in crowd density and entry rates.
-3. **Automated Unit Testing**
-   Configured with Vitest and React Testing Library. Components are fully tested for reliable rendering, robust UI accessibility (a11y), and edge-case tracking (network timeouts, empty states). 
-4. **Dynamic Routing**
+1. **Free Tier AI via Google Gemma 4**
+   The live Ops Intelligence feed utilizes the 100% free **Google Gemma 4 (`gemma-4-26b-a4b-it`)** model via the Gemini API, ensuring highly accurate, context-aware responses with no billing constraints.
+
+2. **Dual-Architecture AI Connection**
+   - **Client-Side Generation:** For lowest latency and edge deployments, the application contacts the Google REST API directly using `VITE_GEMINI_KEY`.
+   - **Serverless Fallback:** Gracefully falls back to a secure `/api/chat` Vercel function (Demo/Reconnecting mode) if direct client limits or network boundaries are hit.
+
+3. **High-Fidelity Operations UI**
+   Features a meticulously designed "Intelligence Ops" layout, incorporating live-updating KPI strips, interactive crowd density bar charts, and a real-time event feed.
+
+4. **Automated Unit Testing**
+   Configured with Vitest and React Testing Library. Components are fully tested for reliable rendering, robust UI accessibility (a11y), and edge-case tracking (network timeouts, empty states).
+
+5. **Dynamic Routing**
    Integrated with `react-router-dom` to support modular navigation across multiple dashboards in future iterations.
-5. **Accessible & Responsive Design**
-   Utilizes high-contrast color palettes (WCAG AA compliant text), screen-reader-only utilities (`.sr-only`), and semantic HTML5 structures.
 
 ## Quick Start
 
@@ -31,14 +36,16 @@ Copy the example file and add your token:
 cp .env.example .env
 ```
 Inside `.env`, set:
-`GEMINI_API_KEY=your_real_key_here`
-*(Note: VITE_GEMINI_API_KEY is also supported but not recommended for security reasons)*
+```env
+VITE_GEMINI_KEY=your_real_key_here
+```
+*(Ensure you do NOT commit your `.env` file to version control. It is already added to `.gitignore`).*
 
 ### 3. Run the Development Server
 ```bash
 npm run dev
 ```
-*(Note: To test the serverless function locally, use `vercel dev` instead of `npm run dev` if you have the Vercel CLI installed).*
+*(Note: To test the serverless fallback function locally, use `vercel dev` instead of `npm run dev` if you have the Vercel CLI installed).*
 
 ### 4. Run the Test Suite
 ```bash
@@ -46,4 +53,4 @@ npm run test
 ```
 
 ## Deployment
-This project is configured for one-click deployment on **Vercel**. When deploying, ensure you add the `GEMINI_API_KEY` environment variable in your Vercel Project Settings under Environment Variables (Production & Preview).
+This project is configured for one-click deployment on **Vercel**. When deploying, ensure you add the `VITE_GEMINI_KEY` environment variable in your Vercel Project Settings under Environment Variables (Production & Preview).

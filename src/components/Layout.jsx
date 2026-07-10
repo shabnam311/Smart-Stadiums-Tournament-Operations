@@ -62,7 +62,7 @@ const Layout = () => {
       <section className="info-grid" style={{ marginTop: '40px' }}>
         <div className="info-block">
           <div className="label">MODEL & DATA</div>
-          <p>AI runs on a <b>free-tier ungated model</b> (Qwen 1.5B) via Hugging Face. Weather data is pulled live via <b>Open-Meteo</b> ({weather} {weatherIcon} currently). Gracefully falls back to demo mode if limits are reached.</p>
+          <p>AI runs on <b>Google Gemini 1.5 Flash</b> for rapid, high-context reasoning. Weather data is pulled live via <b>Open-Meteo</b> ({weather} {weatherIcon} currently). Gracefully falls back to demo mode if limits are reached.</p>
         </div>
         <div className="info-block">
           <div className="label">DEPLOYMENT</div>

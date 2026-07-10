@@ -1,3 +1,5 @@
+import { GoogleGenAI } from '@google/genai';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
@@ -8,8 +10,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Message is required' });
   }
 
-  // Accept both HF_TOKEN and VITE_HF_TOKEN for flexibility
-  const hfToken = process.env.HF_TOKEN || process.env.VITE_HF_TOKEN;
+  const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
   
   // Fallback Mock Logic - reasoning-based responses matching the system prompt style
   const getMockResponse = (msg) => {
@@ -33,48 +34,23 @@ export default async function handler(req, res) {
     return "Based on current venue signals, all systems are nominal. Occupancy is at 71%, entry wait averages 4 minutes, and 3 incidents are being tracked. Ask about a specific area (gates, sections, accessibility, transit) for a targeted recommendation.";
   };
 
-  if (!hfToken || hfToken === 'your_hugging_face_token_here') {
+  if (!apiKey || apiKey === 'your_gemini_api_key_here') {
     return res.status(200).json({ reply: getMockResponse(message), mode: 'demo' });
   }
 
-  const model = "Qwen/Qwen2.5-1.5B-Instruct";
+  const ai = new GoogleGenAI({ apiKey });
 
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-    const hfRes = await fetch("https://router.huggingface.co/v1/chat/completions", {
-      method: "POST",
-      signal: controller.signal,
-      headers: {
-        "Authorization": `Bearer ${hfToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: model,
-        messages: [
-          {
-            role: "system",
-            content: "You are an Ops Intelligence AI for venue operations staff at a FIFA World Cup 2026 stadium during a live match. For every question: (1) state the current situation with one key data point, (2) give a specific actionable recommendation, (3) briefly explain why in one sentence. Keep answers to 2-3 sentences total. Be concise and decisive."
-          },
-          { role: "user", content: message }
-        ],
-        max_tokens: 150,
-        temperature: 0.7
-      }),
+    const response = await ai.models.generateContent({
+      model: 'gemini-1.5-flash',
+      contents: message,
+      config: {
+        systemInstruction: "You are an Ops Intelligence AI for venue operations staff at a FIFA World Cup 2026 stadium during a live match. For every question: (1) state the current situation with one key data point, (2) give a specific actionable recommendation, (3) briefly explain why in one sentence. Keep answers to 2-3 sentences total. Be concise and decisive.",
+        temperature: 0.7,
+      }
     });
-    clearTimeout(timeoutId);
 
-    if (!hfRes.ok) {
-      return res.status(200).json({ reply: getMockResponse(message), mode: 'demo' });
-    }
-
-    const result = await hfRes.json();
-    if (result.error) {
-      return res.status(200).json({ reply: getMockResponse(message), mode: 'demo' });
-    }
-
-    const reply = result.choices[0]?.message?.content?.trim();
+    const reply = response.text?.trim();
 
     if (!reply) {
       return res.status(200).json({ reply: getMockResponse(message), mode: 'demo' });
@@ -82,6 +58,7 @@ export default async function handler(req, res) {
 
     res.status(200).json({ reply, mode: 'live' });
   } catch (error) {
+    console.error("Gemini API Error:", error);
     return res.status(200).json({ reply: getMockResponse(message), mode: 'demo' });
   }
 }

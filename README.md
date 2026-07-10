@@ -7,7 +7,7 @@ It aggregates crowd density, incident tracking, staff deployment, and an AI-powe
 ## Key Features
 
 1. **Serverless AI Proxy (Vercel Functions)**
-   The live Ops Intelligence preview relies on a serverless Vercel function (`api/chat.js`) to securely query a Hugging Face LLM (Qwen/Qwen2.5-1.5B-Instruct) without exposing API tokens to the client bundle.
+   The live Ops Intelligence preview relies on a serverless Vercel function (`api/chat.js`) to securely query the Google Gemini 1.5 Flash model without exposing API tokens to the client bundle.
 2. **Simulated Live Data via React Hooks**
    Static data has been replaced with dynamic React `useState` and `useEffect` hooks, simulating real-time fluctuations in crowd density and entry rates.
 3. **Automated Unit Testing**
@@ -25,14 +25,14 @@ npm install
 ```
 
 ### 2. Configure Environment Variables
-This project requires a Hugging Face token for the AI Ops Intelligence feed.
+This project requires a Google Gemini API token for the AI Ops Intelligence feed.
 Copy the example file and add your token:
 ```bash
 cp .env.example .env
 ```
 Inside `.env`, set:
-`HF_TOKEN=your_real_token_here`
-*(Note: VITE_HF_TOKEN is also supported but not recommended for security reasons)*
+`GEMINI_API_KEY=your_real_key_here`
+*(Note: VITE_GEMINI_API_KEY is also supported but not recommended for security reasons)*
 
 ### 3. Run the Development Server
 ```bash
@@ -46,4 +46,4 @@ npm run test
 ```
 
 ## Deployment
-This project is configured for one-click deployment on **Vercel**. When deploying, ensure you add the `HF_TOKEN` environment variable in your Vercel Project Settings under Environment Variables (Production & Preview).
+This project is configured for one-click deployment on **Vercel**. When deploying, ensure you add the `GEMINI_API_KEY` environment variable in your Vercel Project Settings under Environment Variables (Production & Preview).

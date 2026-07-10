@@ -6,8 +6,8 @@ PITCHSIDE is a high-performance, real-time command center UI designed to replace
 
 **How I Built It (Tools & Why):**
 - **Vite + React**: Chosen for fast HMR during the hackathon and snappy client-side rendering.
-- **Vercel Serverless Functions**: I used `/api/chat.js` as a secure proxy. This ensures the Hugging Face API tokens stay strictly server-side and are never exposed in the client bundle.
-- **Qwen/Qwen2.5-1.5B-Instruct**: After experimenting with heavier gated models, I switched to Qwen 1.5B via Hugging Face. It's ungated, incredibly fast for a free-tier model, and perfect for a snappy, real-time live demo without cold-start timeouts.
+- **Vercel Serverless Functions**: I used `/api/chat.js` as a secure proxy. This ensures the Gemini API keys stay strictly server-side and are never exposed in the client bundle.
+- **Google Gemini 1.5 Flash**: I switched to Gemini Flash via the official SDK. It's incredibly fast, provides top-tier reasoning capabilities (crucial for ops scenarios), and acts as the perfect backend for a real-time dashboard.
 
 **Prompt Evolution (Reasoning over Data):**
 Initially, my system prompt just asked the model to "answer questions about the stadium." The result was dry data dumps. 

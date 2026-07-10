@@ -5,10 +5,18 @@ const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_KEY;
 const MODEL = 'gemma-4-26b-a4b-it';
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
-const SYSTEM_PROMPT = `You are PITCHSIDE, an Ops Intelligence AI for venue operations staff at a FIFA World Cup 2026 stadium during a live match.
+const getSystemPrompt = (zones) => {
+  const totalOcc = zones.reduce((sum, z) => sum + z.occ, 0);
+  const totalCap = zones.reduce((sum, z) => sum + z.cap, 0);
+  const pct = Math.round((totalOcc / totalCap) * 100);
+  const zoneDetails = zones.map(z => `- ${z.name}: ${z.occ.toLocaleString()}/${z.cap.toLocaleString()} capacity (${Math.round((z.occ/z.cap)*100)}%) - ${z.level.toUpperCase()} RISK`).join('\n');
+
+  return `You are PITCHSIDE, an Ops Intelligence AI for venue operations staff at a FIFA World Cup 2026 stadium during a live match.
 
 Context you always know:
-- Current stadium occupancy: 71% (52,000 of 73,000 seats filled)
+- Current stadium occupancy: ${pct}% (${totalOcc.toLocaleString()} of ${totalCap.toLocaleString()} seats filled)
+- Stadium Zone Density:
+${zoneDetails}
 - Active incidents: 3 (1 high-severity congestion at Gate C, 1 medical in Section E, 1 minor spill in concourse B)
 - Weather: 29C, 68% humidity, clear skies
 - Staff on duty: 128 of 140 rostered
@@ -27,6 +35,7 @@ CRITICAL RULES:
 - Be concise and decisive. Never say you are an AI language model or that you cannot access real data.
 - Always respond in character as if you have live sensor feeds.
 - Format: (1) current situation with one data point, (2) actionable recommendation, (3) one-sentence reason why.`;
+};
 
 const initialZones = [
   { name: 'Section A \u2014 North', cap: 9725, occ: 3890, level: 'low' },
@@ -74,13 +83,15 @@ const OpsDashboard = () => {
     setResponse(null);
 
     try {
+      const currentSystemPrompt = getSystemPrompt(zones);
+      
       // Try the direct Google REST API first (client-side)
       if (GEMINI_API_KEY) {
         const res = await fetch(API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+            system_instruction: { parts: [{ text: currentSystemPrompt }] },
             contents: [{ role: 'user', parts: [{ text: query }] }],
             generationConfig: { temperature: 0.7, maxOutputTokens: 500 },
           }),
@@ -100,7 +111,7 @@ const OpsDashboard = () => {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: query }),
+        body: JSON.stringify({ message: query, systemPrompt: currentSystemPrompt }),
       });
       const data = await res.json();
       setResponse(data.reply);

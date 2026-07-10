@@ -5,7 +5,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { message } = req.body;
+  const { message, systemPrompt } = req.body;
   if (!message) {
     return res.status(400).json({ error: 'Message is required' });
   }
@@ -31,7 +31,7 @@ export default async function handler(req, res) {
       return "Waste diversion is at 62%, above the 60% sustainability target. However, recycling stations near Section G are at full capacity. Recommend dispatching maintenance now, because Section G's post-halftime foot traffic will make access difficult in 15 minutes.";
     if (lower.includes('seat') || lower.includes('capacity') || lower.includes('free'))
       return "Overall stadium occupancy is at 71% with Sections A and D showing the most availability at approximately 40% filled. Recommend directing late arrivals to Gate A (North), because it has the shortest queue and direct access to available seating.";
-    return "Based on current venue signals, all systems are nominal. Occupancy is at 71%, entry wait averages 4 minutes, and 3 incidents are being tracked. Ask about a specific area (gates, sections, accessibility, transit) for a targeted recommendation.";
+    return "Based on current venue signals, all systems are nominal. Ask about a specific area (gates, sections, accessibility, transit) for a targeted recommendation.";
   };
 
   if (!apiKey || apiKey === 'your_gemini_api_key_here') {
@@ -41,35 +41,14 @@ export default async function handler(req, res) {
   const ai = new GoogleGenAI({ apiKey });
 
   try {
-    const robustPrompt = `You are PITCHSIDE, an Ops Intelligence AI for venue operations staff at a FIFA World Cup 2026 stadium during a live match.
-
-Context you always know:
-- Current stadium occupancy: 71% (52,000 of 73,000 seats filled)
-- Active incidents: 3 (1 high-severity congestion at Gate C, 1 medical in Section E, 1 minor spill in concourse B)
-- Weather: 29C, 68% humidity, clear skies
-- Staff on duty: 128 of 140 rostered
-- Entry wait times: Gate A 2min, Gate B 3min, Gate C 8min (elevated), Gate D 4min
-- Sustainability: Waste diversion at 62% (above 60% target)
-- Transit: Metro Line 2 running 4-min intervals, parking lots 78% full
-- Accessibility: Ramp at Gate 4 clear, Elevator Bank B has 6-min queue
-- Food and beverage: Main food courts at Concourse A (North) and Concourse D (South), smaller kiosks at every gate entrance
-- Restrooms: Available at all concourse levels, shortest queues currently at Concourse A
-- Fan zones: Main fan zone at Gate A plaza, family zone near Section B
-
-CRITICAL RULES:
-- Output ONLY the final answer. Do NOT show your reasoning, thinking, bullet points, asterisks, or any internal process.
-- Never output lines starting with * or - that describe your thought process.
-- Just give the direct answer in plain sentences, 2-3 sentences max.
-- Be concise and decisive. Never say you are an AI language model or that you cannot access real data.
-- Always respond in character as if you have live sensor feeds.
-- Format: (1) current situation with one data point, (2) actionable recommendation, (3) one-sentence reason why.
-
-Question: ${message}`;
-
+    const robustPrompt = systemPrompt ? systemPrompt : `You are PITCHSIDE, an Ops Intelligence AI. Keep answers very brief.`;
+    
+    // Using system_instruction since it's the standard way for Gemini
     const response = await ai.models.generateContent({
       model: 'gemma-4-26b-a4b-it',
-      contents: robustPrompt,
+      contents: message,
       config: {
+        systemInstruction: robustPrompt,
         temperature: 0.7,
         maxOutputTokens: 500
       }

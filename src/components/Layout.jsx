@@ -5,37 +5,46 @@ import venues from '../data/venues.json';
 const Layout = () => {
   const location = useLocation();
   const [weather, setWeather] = useState('29°');
-  const [weatherIcon, setWeatherIcon] = useState('🌤️');
-  const activeVenue = venues[0]; // Default to MetLife Stadium
+  const [clock, setClock] = useState('--:--:--');
+  const activeVenue = venues[0];
 
   useEffect(() => {
-    // Live Weather Integration using REAL venue coordinates
     fetch(`https://api.open-meteo.com/v1/forecast?latitude=${activeVenue.lat}&longitude=${activeVenue.lon}&current_weather=true`)
       .then(res => res.json())
       .then(data => {
-        if (data && data.current_weather) {
+        if (data?.current_weather) {
           setWeather(`${Math.round(data.current_weather.temperature)}°`);
         }
       })
-      .catch(err => console.error("Weather fetch failed, falling back to mock", err));
+      .catch(() => {});
   }, [activeVenue]);
+
+  useEffect(() => {
+    const tick = () => setClock(new Date().toLocaleTimeString('en-GB'));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <div className="wrap">
       <nav>
         <div className="logo">
           <div className="logo-mark"></div>
-          <div className="logo-text">PITCHSIDE • <b>OPS</b></div>
+          <div className="logo-text"><b>STADIUM</b>OPS</div>
+        </div>
+        <div className="nav-pills">
+          <div className="pill live"><span className="dot"></span>LIVE MATCH</div>
         </div>
         <div className="nav-links">
-          <Link to="/" style={{ color: location.pathname === '/' ? 'var(--accent)' : '' }}>AI PROXY</Link>
-          <Link to="/overview" style={{ color: location.pathname === '/overview' ? 'var(--accent)' : '' }}>OVERVIEW</Link>
-          <Link to="/transport" style={{ color: location.pathname === '/transport' ? 'var(--accent)' : '' }}>TRANSPORT</Link>
-          <Link to="/accessibility" style={{ color: location.pathname === '/accessibility' ? 'var(--accent)' : '' }}>ACCESS</Link>
+          <Link to="/" className={location.pathname === '/' ? 'active' : ''}>Overview</Link>
+          <Link to="/transport" className={location.pathname === '/transport' ? 'active' : ''}>Transit</Link>
+          <Link to="/accessibility" className={location.pathname === '/accessibility' ? 'active' : ''}>Accessibility</Link>
+          <span className="clock">{clock}</span>
         </div>
       </nav>
 
-      {/* Hero only shows on the main AI Ops page */}
+      {/* Hero only shows on the main page */}
       {location.pathname === '/' && (
         <section className="hero">
           <div className="eyebrow">
@@ -46,34 +55,33 @@ const Layout = () => {
           <p className="hero-sub">Built for venue operations staff during live matches. Query crowd flow, incidents, transit, and accessibility in plain language - get a decision with reasoning, not another dashboard.</p>
 
           <div className="legend">
-            <div className="legend-item"><span className="legend-dot" style={{background:"var(--c-crowd)"}}></span><span>CROWD FLOW</span></div>
-            <div className="legend-item"><span className="legend-dot" style={{background:"var(--c-incident)"}}></span><span>INCIDENT</span></div>
-            <div className="legend-item"><span className="legend-dot" style={{background:"var(--c-transit)"}}></span><span>TRANSIT</span></div>
-            <div className="legend-item"><span className="legend-dot" style={{background:"var(--c-access)"}}></span><span>ACCESSIBILITY</span></div>
+            <div className="legend-item"><span className="legend-dot" style={{background:'var(--c-crowd)'}}></span><span>CROWD FLOW</span></div>
+            <div className="legend-item"><span className="legend-dot" style={{background:'var(--c-incident)'}}></span><span>INCIDENT</span></div>
+            <div className="legend-item"><span className="legend-dot" style={{background:'var(--c-transit)'}}></span><span>TRANSIT</span></div>
+            <div className="legend-item"><span className="legend-dot" style={{background:'var(--c-access)'}}></span><span>ACCESSIBILITY</span></div>
           </div>
         </section>
       )}
 
-      {/* Renders the specific page */}
       <div style={{ marginTop: location.pathname === '/' ? '0' : '40px', minHeight: '60vh' }}>
-        <Outlet context={{ venue: activeVenue }} />
+        <Outlet context={{ venue: activeVenue, weather, clock }} />
       </div>
 
       <section className="info-grid" style={{ marginTop: '40px' }}>
         <div className="info-block">
           <div className="label">MODEL & DATA</div>
-          <p>AI runs on <b>Google Gemini 1.5 Flash</b> for rapid, high-context reasoning. Weather data is pulled live via <b>Open-Meteo</b> ({weather} {weatherIcon} currently). Gracefully falls back to demo mode if limits are reached.</p>
+          <p>AI runs on <b>Google Gemma 4</b> via the Gemini API for rapid, context-aware reasoning. Weather data is pulled live via <b>Open-Meteo</b> ({weather} currently). Gracefully falls back to demo mode if limits are reached.</p>
         </div>
         <div className="info-block">
           <div className="label">DEPLOYMENT</div>
-          <p>Static frontend with a <b>serverless proxy</b> for the model call, keeping tokens completely hidden from the browser bundle.</p>
+          <p>Static frontend deployed on <b>Vercel</b> with a <b>serverless proxy</b> for the model call, keeping API tokens completely hidden from the browser bundle.</p>
         </div>
       </section>
 
       <footer>
-        <span>PITCHSIDE · OPS · 2026 · DEMO</span>
+        <span>STADIUMOPS · 2026 · FIFA WORLD CUP</span>
         <div className="foot-links">
-          <a href="#">GITHUB</a>
+          <a href="https://github.com/shabnam311/Smart-Stadiums-Tournament-Operations" target="_blank" rel="noopener noreferrer">GITHUB</a>
           <a href="#">MODEL CARD</a>
           <a href="#">ABOUT</a>
         </div>

@@ -35,9 +35,9 @@ describe('Smart Stadium Application - Edge Cases', () => {
         <OpsDashboard />
       </MemoryRouter>
     );
-    const runBtn = screen.getByText(/▸ RUN QUERY/i);
+    const runBtn = screen.getByText(/Run query/i);
     fireEvent.click(runBtn);
-    expect(screen.queryByText(/GENERATING/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Generating/i)).not.toBeInTheDocument();
   });
 
   test('OpsDashboard: clears query and response', () => {
@@ -49,10 +49,10 @@ describe('Smart Stadium Application - Edge Cases', () => {
     const textarea = screen.getByPlaceholderText(/Ask about crowd flow/i);
     fireEvent.change(textarea, { target: { value: 'Hello' } });
     
-    const clearBtn = screen.getByText(/CLEAR/i);
+    const clearBtn = screen.getByText(/Clear/i);
     fireEvent.click(clearBtn);
     expect(textarea.value).toBe('');
-    expect(screen.getByText(/AWAITING QUERY/i)).toBeInTheDocument();
+    expect(screen.getByText(/Awaiting query/i)).toBeInTheDocument();
   });
 
   test('OpsDashboard: long input updates char count correctly', () => {
@@ -69,7 +69,11 @@ describe('Smart Stadium Application - Edge Cases', () => {
 
   test('OpsDashboard: handles successful API response (LIVE mode)', async () => {
     global.fetch.mockResolvedValueOnce({
-      json: async () => ({ reply: "Gate A is clear.", mode: "live" }),
+      json: async () => ({ 
+        reply: "Gate A is clear.", 
+        mode: "live",
+        candidates: [{ content: { parts: [{ text: "Gate A is clear." }] } }]
+      }),
     });
 
     render(
@@ -80,14 +84,14 @@ describe('Smart Stadium Application - Edge Cases', () => {
     const textarea = screen.getByPlaceholderText(/Ask about crowd flow/i);
     fireEvent.change(textarea, { target: { value: 'Status of Gate A?' } });
     
-    const runBtn = screen.getByText(/▸ RUN QUERY/i);
+    const runBtn = screen.getByText(/Run query/i);
     fireEvent.click(runBtn);
 
-    expect(screen.getByText(/GENERATING/i)).toBeInTheDocument();
+    expect(screen.getByText(/Generating/i)).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getByText("Gate A is clear.")).toBeInTheDocument();
-      expect(screen.getByText(/LIVE AI RESPONSE/i)).toBeInTheDocument();
+      expect(screen.getByText(/Live AI response/i)).toBeInTheDocument();
     });
   });
 
@@ -102,12 +106,12 @@ describe('Smart Stadium Application - Edge Cases', () => {
     const textarea = screen.getByPlaceholderText(/Ask about crowd flow/i);
     fireEvent.change(textarea, { target: { value: 'Status of Gate B?' } });
     
-    const runBtn = screen.getByText(/▸ RUN QUERY/i);
+    const runBtn = screen.getByText(/Run query/i);
     fireEvent.click(runBtn);
 
     await waitFor(() => {
-      expect(screen.getByText(/Network error connecting to Hugging Face/i)).toBeInTheDocument();
-      expect(screen.getByText(/DEMO MODE · API UNREACHABLE/i)).toBeInTheDocument();
+      expect(screen.getByText(/Temporary signal loss/i)).toBeInTheDocument();
+      expect(screen.getByText(/RECONNECTING/i)).toBeInTheDocument();
     });
   });
 

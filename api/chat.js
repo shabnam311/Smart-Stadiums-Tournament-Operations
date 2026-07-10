@@ -42,7 +42,7 @@ export default async function handler(req, res) {
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemma-4-26b-a4b-it',
       contents: message,
       config: {
         systemInstruction: "You are an Ops Intelligence AI for venue operations staff at a FIFA World Cup 2026 stadium during a live match. For every question: (1) state the current situation with one key data point, (2) give a specific actionable recommendation, (3) briefly explain why in one sentence. Keep answers to 2-3 sentences total. Be concise and decisive.",

@@ -38,16 +38,16 @@ CRITICAL RULES:
 };
 
 const initialZones = [
-  { name: 'Section A \u2014 North', cap: 9725, occ: 3890, level: 'low' },
-  { name: 'Section B \u2014 South', cap: 9725, occ: 6807, level: 'med' },
-  { name: 'Section C \u2014 East', cap: 9725, occ: 8752, level: 'high' },
-  { name: 'Section D \u2014 West', cap: 9725, occ: 3890, level: 'low' },
+  { name: 'Section A, North', cap: 9725, occ: 3890, level: 'low' },
+  { name: 'Section B, South', cap: 9725, occ: 6807, level: 'med' },
+  { name: 'Section C, East', cap: 9725, occ: 8752, level: 'high' },
+  { name: 'Section D, West', cap: 9725, occ: 3890, level: 'low' },
 ];
 
 const initialFeed = [
   { type: 'recommendation', color: 'var(--c-crowd)', label: 'RECOMMENDATION', time: '18:05', text: 'Entry rate at Gate C is 22/min against a 15/min comfortable threshold. Recommend opening auxiliary turnstiles C4\u2013C6 for the next 20 minutes.', actionable: true },
-  { type: 'incident', color: 'var(--c-incident)', label: 'HIGH SEVERITY', time: '18:04', title: 'Congestion building at Gate C turnstiles', text: 'Est. 6 min delay \u2014 marshal dispatched.' },
-  { type: 'incident', color: 'var(--c-transit)', label: 'MED SEVERITY', time: '17:52', title: 'Minor medical \u2014 dehydration, Section E', text: 'Attended \u2014 monitoring.' },
+  { type: 'incident', color: 'var(--c-incident)', label: 'HIGH SEVERITY', time: '18:04', title: 'Congestion building at Gate C turnstiles', text: 'Est. 6 min delay. Marshal dispatched.' },
+  { type: 'incident', color: 'var(--c-transit)', label: 'MED SEVERITY', time: '17:52', title: 'Minor medical, dehydration, Section E', text: 'Attended. Monitoring.' },
 ];
 
 const OpsDashboard = () => {
@@ -225,7 +225,7 @@ const OpsDashboard = () => {
       <section className="panels">
         <div className="panel">
           <div className="panel-head">
-            <div className="panel-title"><span className="bar"></span>Crowd Density {'\u2014'} Stadium Bowl</div>
+            <div className="panel-title"><span className="bar"></span>Crowd Density, Stadium Bowl</div>
           </div>
           {zones.map((z, i) => {
             const pct = Math.round((z.occ / z.cap) * 100);

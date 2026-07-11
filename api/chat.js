@@ -16,22 +16,22 @@ export default async function handler(req, res) {
   const getMockResponse = (msg) => {
     const lower = msg.toLowerCase();
     if (lower.includes('gate c'))
-      return '{"status":"Gate C entry rate is currently 22/min against a 15/min comfort threshold.","action":"Recommend opening auxiliary turnstiles C4-C6 for the next 20 minutes.","reason":"At this pace the queue will exceed 200 people within 8 minutes and create a safety bottleneck."}';
+      return `{"status":"Gate C entry rate is currently 22/min against a 15/min comfort threshold.","action":"Recommend opening auxiliary turnstiles C4-C6 for the next 20 minutes.","reason":"At this pace the queue will exceed 200 people within 8 minutes and create a safety bottleneck."}`;
     if (lower.includes('second half') || lower.includes('fullest'))
-      return '{"status":"Section G (West Stand) is trending toward 92% occupancy by second half based on current entry velocity.","action":"Suggest pre-positioning two additional marshals at the West concourse now.","reason":"Historical data shows lateral crowd movement spikes at halftime and G has limited exit width."}';
+      return `{"status":"Section G (West Stand) is trending toward 92% occupancy by second half based on current entry velocity.","action":"Suggest pre-positioning two additional marshals at the West concourse now.","reason":"Historical data shows lateral crowd movement spikes at halftime and G has limited exit width."}`;
     if (lower.includes('route') || lower.includes('access'))
-      return '{"status":"The ramp at Gate 4 is currently clear with no stairs, making it the shortest accessible route to Section D at 30m.","action":"Recommend directing wheelchair users there instead of Gate 2.","reason":"Elevator Bank B has a 6-minute wait queue right now."}';
+      return `{"status":"The ramp at Gate 4 is currently clear with no stairs, making it the shortest accessible route to Section D at 30m.","action":"Recommend directing wheelchair users there instead of Gate 2.","reason":"Elevator Bank B has a 6-minute wait queue right now."}`;
     if (lower.includes('weather') || lower.includes('temperature'))
-      return '{"status":"Current temperature is 29C with humidity at 68%.","action":"Recommend increasing water station staffing at Sections C and G.","reason":"Dehydration incidents historically spike when humidity exceeds 60% during evening matches."}';
+      return `{"status":"Current temperature is 29C with humidity at 68%.","action":"Recommend increasing water station staffing at Sections C and G.","reason":"Dehydration incidents historically spike when humidity exceeds 60% during evening matches."}`;
     if (lower.includes('incident') || lower.includes('medical'))
-      return '{"status":"Three open incidents currently logged, one high-severity congestion event at Gate C. Medical team has attended the dehydration case in Section E.","action":"Recommend keeping the triage station at Gate B on standby.","reason":"Entry-phase crowd density correlates with post-entry medical calls."}';
+      return `{"status":"Three open incidents currently logged, one high-severity congestion event at Gate C. Medical team has attended the dehydration case in Section E.","action":"Recommend keeping the triage station at Gate B on standby.","reason":"Entry-phase crowd density correlates with post-entry medical calls."}`;
     if (lower.includes('staff') || lower.includes('marshal'))
-      return '{"status":"128 of 140 rostered staff currently on duty, with 3 marshals assigned to the West concourse.","action":"Recommend redeploying 2 idle marshals from Gate A (currently at low flow) to Gate C.","reason":"Gate C is running at 147% of its comfortable throughput rate."}';
+      return `{"status":"128 of 140 rostered staff currently on duty, with 3 marshals assigned to the West concourse.","action":"Recommend redeploying 2 idle marshals from Gate A (currently at low flow) to Gate C.","reason":"Gate C is running at 147% of its comfortable throughput rate."}`;
     if (lower.includes('waste') || lower.includes('recycl') || lower.includes('sustain'))
-      return '{"status":"Waste diversion is at 62%, above the 60% sustainability target. However, recycling stations near Section G are at full capacity.","action":"Recommend dispatching maintenance now.","reason":"Section G\\'s post-halftime foot traffic will make access difficult in 15 minutes."}';
+      return `{"status":"Waste diversion is at 62%, above the 60% sustainability target. However, recycling stations near Section G are at full capacity.","action":"Recommend dispatching maintenance now.","reason":"Section G's post-halftime foot traffic will make access difficult in 15 minutes."}`;
     if (lower.includes('seat') || lower.includes('capacity') || lower.includes('free'))
-      return '{"status":"Overall stadium occupancy is at 71% with Sections A and D showing the most availability at approximately 40% filled.","action":"Recommend directing late arrivals to Gate A (North).","reason":"It has the shortest queue and direct access to available seating."}';
-    return '{"status":"Based on current venue signals, all systems are nominal.","action":"Ask about a specific area (gates, sections, accessibility, transit) for a targeted recommendation.","reason":""}';
+      return `{"status":"Overall stadium occupancy is at 71% with Sections A and D showing the most availability at approximately 40% filled.","action":"Recommend directing late arrivals to Gate A (North).","reason":"It has the shortest queue and direct access to available seating."}`;
+    return `{"status":"Based on current venue signals, all systems are nominal.","action":"Ask about a specific area (gates, sections, accessibility, transit) for a targeted recommendation.","reason":""}`;
   };
 
   if (!apiKey || apiKey === 'your_gemini_api_key_here') {

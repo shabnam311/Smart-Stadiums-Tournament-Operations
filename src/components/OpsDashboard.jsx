@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
-
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_KEY;
 const MODEL = 'gemma-4-26b-a4b-it';
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`;
@@ -32,7 +30,7 @@ const parseResponse = (raw) => {
   try {
     let text = raw.replace(/```json/g, '').replace(/```/g, '').trim();
     return JSON.parse(text);
-  } catch (e) {
+  } catch {
     return { status: 'Unable to parse data stream.', action: 'Please rephrase your query.', reason: 'Signal interference.' };
   }
 };
@@ -51,8 +49,6 @@ const initialFeed = [
 ];
 
 const OpsDashboard = () => {
-  const ctx = useOutletContext() || {};
-  const clock = ctx.clock || '--:--:--';
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [response, setResponse] = useState(null);
@@ -116,7 +112,7 @@ const OpsDashboard = () => {
       const data = await res.json();
       setResponse(parseResponse(data.reply));
       setMode(data.mode || 'demo');
-    } catch (_err) {
+    } catch {
       setResponse({ status: 'Temporary signal loss from venue sensors.', action: 'Please retry your query in a moment.', reason: '' });
       setMode('demo');
     } finally {

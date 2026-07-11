@@ -174,7 +174,7 @@ const OpsDashboard = () => {
           </div>
           <textarea
             id="queryInput"
-            placeholder="Ask about crowd flow, incidents, transit, or access\u2026"
+            placeholder="Ask about crowd flow, incidents, transit, or access..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleRunQuery(); } }}
@@ -186,7 +186,7 @@ const OpsDashboard = () => {
           </div>
           <div className="action-row">
             <button className="btn-run" onClick={handleRunQuery} disabled={isLoading}>
-              {isLoading ? '\u25b8 Running\u2026' : '\u25b8 Run query'}
+              {isLoading ? '\u25b8 Running...' : '\u25b8 Run query'}
             </button>
             <button className="btn-ghost" onClick={handleClear}>Clear</button>
             <span className="char-count">{query.length} chars</span>
@@ -208,7 +208,7 @@ const OpsDashboard = () => {
           {isLoading && (
             <div className="response-empty">
               <div className="pulse-grid"><span></span><span></span><span></span><span></span><span></span></div>
-              <span className="label">Generating{'\u2026'}</span>
+              <span className="label">Generating...</span>
             </div>
           )}
 

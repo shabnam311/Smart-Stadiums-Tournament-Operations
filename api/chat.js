@@ -5,7 +5,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { message, systemPrompt } = req.body;
+  const { message } = req.body;
   if (!message) {
     return res.status(400).json({ error: 'Message is required' });
   }
@@ -45,14 +45,10 @@ export default async function handler(req, res) {
   const ai = new GoogleGenAI({ apiKey });
 
   try {
-    const robustPrompt = systemPrompt ? systemPrompt : `You are PITCHSIDE, an Ops Intelligence AI. Keep answers very brief.`;
-    
-    // Using system_instruction since it's the standard way for Gemini
     const response = await ai.models.generateContent({
       model: 'gemma-4-26b-a4b-it',
       contents: message,
       config: {
-        systemInstruction: robustPrompt,
         temperature: 0.6,
         maxOutputTokens: 250
       }

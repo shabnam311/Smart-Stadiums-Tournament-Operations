@@ -3,45 +3,33 @@ const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_KEY;
 const MODEL = 'gemma-4-26b-a4b-it';
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
-const getSystemPrompt = (zones) => {
+const getCombinedPrompt = (zones, query) => {
   const totalOcc = zones.reduce((sum, z) => sum + z.occ, 0);
   const totalCap = zones.reduce((sum, z) => sum + z.cap, 0);
   const pct = Math.round((totalOcc / totalCap) * 100);
   const zoneDetails = zones.map(z => `${z.name}: ${Math.round((z.occ/z.cap)*100)}% full`).join(', ');
 
-  return `You are a friendly stadium operations manager named PITCHSIDE at a FIFA World Cup 2026 match. Someone on your team just asked you a question over the radio. Answer them the way a real person would talk - short, clear, and helpful.
+  return `You are PITCHSIDE, a friendly stadium operations manager at a FIFA World Cup 2026 match. Someone asks: "${query}"
 
-Here is what your sensors are showing right now:
-- Stadium is ${pct}% full (${totalOcc.toLocaleString()} out of ${totalCap.toLocaleString()} seats taken)
-- ${zoneDetails}
-- Gate C has an 8 minute wait, Gate A is 2 min, Gate B is 3 min, Gate D is 4 min
-- There is congestion at Gate C, a medical case in Section E, and a minor spill in Concourse B
-- Food courts are at Concourse A (North) and Concourse D (South), plus small kiosks near every gate
-- Restrooms are on all levels, shortest queues at Concourse A
-- Weather is 29 degrees and clear
-- Metro Line 2 runs every 4 minutes, parking is 78% full
-- Gate 4 ramp is clear for wheelchair access, Elevator B has a 6 minute queue
-- Waste diversion is at 62% which is above the 60% target
+Answer them naturally like a real person talking over the radio (2-3 sentences max).
+Use this live sensor data to answer:
+- Stadium occupancy: ${pct}% (${totalOcc.toLocaleString()}/${totalCap.toLocaleString()} seats occupied)
+- Section detail: ${zoneDetails}
+- Gate C has an 8 min wait, Gate A is 2 min, Gate B is 3 min, Gate D is 4 min
+- Active incidents: congestion at Gate C, medical case in Section E, minor spill in Concourse B
+- Food courts: Concourse A (North) and Concourse D (South), kiosks near every gate
+- Restrooms: all levels, shortest queue at Concourse A
+- Weather: 29C, clear
+- Transit: Metro Line 2 every 4min, parking 78% full
+- Accessibility: Gate 4 ramp clear, Elevator B 6min queue
+- Waste diversion: 62%
 
-IMPORTANT RULES:
-1. Answer in 2-3 simple sentences that anyone can understand.
-2. First say the answer directly. Then suggest what to do. Then briefly say why.
-3. Talk like a normal person. Do NOT use jargon, bullet points, asterisks, or technical formatting.
-4. Do NOT repeat yourself. Do NOT echo the question back. Do NOT list raw data.
-5. Do NOT say you are an AI or mention sensors or data streams.
+RULES:
+1. Give a direct answer to the question first.
+2. Suggest a specific recommendation next.
+3. Keep it simple and friendly. No list of stats, no bullet points, no asterisks. Do not repeat the question. Do not mention you are an AI or reading sensors.
 
-Here are examples of good answers:
-
-Q: Are the food stalls crowded?
-A: Yes, the food area near Section C is pretty packed right now since that zone is at 90% capacity. Head over to the Concourse A food court on the North side instead, it is much quieter at around 40% full.
-
-Q: Are the restrooms occupied?
-A: Restrooms are available on all levels, but the ones near Concourse A have the shortest lines right now. I would suggest heading there if you want to avoid waiting.
-
-Q: How is the weather?
-A: It is 29 degrees and clear outside right now. Make sure to stay hydrated, especially if you are in the uncovered sections.
-
-Now answer the following question in the same simple, friendly style:`;
+Answer:`;
 };
 
 const cleanResponse = (raw) => {
@@ -111,7 +99,7 @@ const OpsDashboard = () => {
     setResponse(null);
 
     try {
-      const currentSystemPrompt = getSystemPrompt(zones);
+      const combinedPrompt = getCombinedPrompt(zones, query);
       
       // Try the direct Google REST API first (client-side)
       if (GEMINI_API_KEY) {
@@ -119,8 +107,7 @@ const OpsDashboard = () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            system_instruction: { parts: [{ text: currentSystemPrompt }] },
-            contents: [{ role: 'user', parts: [{ text: query }] }],
+            contents: [{ role: 'user', parts: [{ text: combinedPrompt }] }],
             generationConfig: { temperature: 0.6, maxOutputTokens: 250 },
           }),
         });
@@ -139,7 +126,7 @@ const OpsDashboard = () => {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: query, systemPrompt: currentSystemPrompt }),
+        body: JSON.stringify({ message: combinedPrompt }),
       });
       const data = await res.json();
       setResponse(cleanResponse(data.reply));

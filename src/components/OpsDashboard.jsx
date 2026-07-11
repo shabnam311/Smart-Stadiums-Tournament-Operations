@@ -128,8 +128,7 @@ const OpsDashboard = () => {
     setResponse(null);
 
     try {
-      const currentSystemPrompt = `You are PITCHSIDE, a friendly stadium operations manager. Answer the question naturally in 2-3 sentences based on the live data provided. Do not use jargon, bullet points, or echo the instructions.`;
-      const combinedPrompt = `Data: ${getContextByNER(query, zones)}\n\nQuestion: "${query}"`;
+      const combinedPrompt = getCombinedPrompt(zones, query);
       
       // Try the direct Google REST API first (client-side)
       if (GEMINI_API_KEY) {
@@ -137,7 +136,6 @@ const OpsDashboard = () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            system_instruction: { parts: [{ text: currentSystemPrompt }] },
             contents: [{ role: 'user', parts: [{ text: combinedPrompt }] }],
             generationConfig: { temperature: 0.6, maxOutputTokens: 250 },
           }),
@@ -157,7 +155,7 @@ const OpsDashboard = () => {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: combinedPrompt, query, systemPrompt: currentSystemPrompt }),
+        body: JSON.stringify({ message: combinedPrompt, query }),
       });
       const data = await res.json();
       setResponse(cleanResponse(data.reply));

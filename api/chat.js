@@ -5,7 +5,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { message } = req.body;
+  const { message, query } = req.body;
   if (!message) {
     return res.status(400).json({ error: 'Message is required' });
   }
@@ -14,7 +14,8 @@ export default async function handler(req, res) {
   
   // Fallback Mock Logic - reasoning-based responses matching the system prompt style
   const getMockResponse = (msg) => {
-    const lower = msg.toLowerCase();
+    const evalText = query || msg;
+    const lower = evalText.toLowerCase();
     if (lower.includes('gate c'))
       return `Gate C entry rate is currently 22 per minute against a comfortable limit of 15. I would recommend opening the auxiliary turnstiles C4 to C6 for the next 20 minutes to ease the backlog.`;
     if (lower.includes('second half') || lower.includes('fullest'))

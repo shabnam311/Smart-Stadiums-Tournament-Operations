@@ -157,7 +157,7 @@ const OpsDashboard = () => {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: combinedPrompt }),
+        body: JSON.stringify({ message: combinedPrompt, query }),
       });
       const data = await res.json();
       setResponse(cleanResponse(data.reply));

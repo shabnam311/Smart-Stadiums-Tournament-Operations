@@ -52,13 +52,14 @@ const getContextByNER = (queryText, zones) => {
 const getCombinedPrompt = (zones, query) => {
   const context = getContextByNER(query, zones);
 
-  return `You are PITCHSIDE, a friendly stadium operations manager. Answer the question naturally in 2-3 sentences based on the live data provided.
+  return `Read the Context and answer the Question naturally as a helpful stadium operations manager.
 
-Live Stadium Data:
-${context}
+Context: Metro Line 2 is running at 4-minute intervals. Parking lots are 78% full.
+Question: "how is transit?"
+Answer: Transit is running smoothly. Metro Line 2 has a train every 4 minutes, and there's still plenty of parking since the lots are 78% full.
 
+Context: ${context}
 Question: "${query}"
-
 Answer:`;
 };
 

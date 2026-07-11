@@ -110,8 +110,7 @@ describe('Smart Stadium Application - Edge Cases', () => {
     fireEvent.click(runBtn);
 
     await waitFor(() => {
-      expect(screen.getByText(/Temporary signal loss/i)).toBeInTheDocument();
-      expect(screen.getByText(/RECONNECTING/i)).toBeInTheDocument();
+      expect(screen.getByText(/Local Fallback/i)).toBeInTheDocument();
     });
   });
 

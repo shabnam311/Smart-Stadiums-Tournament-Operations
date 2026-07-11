@@ -249,16 +249,16 @@ const OpsDashboard = () => {
             <div>
               {mode === 'demo' ? (
                 <div className="resp-tag" style={{borderColor: 'var(--c-transit)', color: 'var(--c-transit)'}}>
-                  <i style={{background: 'var(--c-transit)'}}></i>RECONNECTING
+                  <i style={{background: 'var(--c-transit)'}}></i>Local Fallback
                 </div>
               ) : (
                 <div className="resp-tag"><i></i>Live AI response</div>
               )}
               <div className="resp-text">{response}</div>
               <div className="resp-meta">
-                <span>SOURCE: Google GenAI</span>
+                <span>SOURCE: {mode === 'demo' ? 'Local Engine' : 'Google GenAI'}</span>
                 <span>MODEL: {MODEL}</span>
-                <span>STATUS: {mode === 'demo' ? 'Retrying' : 'Secure'}</span>
+                <span>STATUS: {mode === 'demo' ? 'Secure (Local)' : 'Secure'}</span>
               </div>
             </div>
           )}

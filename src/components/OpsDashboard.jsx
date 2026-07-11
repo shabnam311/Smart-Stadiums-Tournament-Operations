@@ -3,31 +3,61 @@ const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_KEY;
 const MODEL = 'gemma-4-26b-a4b-it';
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
-const getCombinedPrompt = (zones, query) => {
+const getContextByNER = (queryText, zones) => {
+  const lower = queryText.toLowerCase();
   const totalOcc = zones.reduce((sum, z) => sum + z.occ, 0);
   const totalCap = zones.reduce((sum, z) => sum + z.cap, 0);
   const pct = Math.round((totalOcc / totalCap) * 100);
-  const zoneDetails = zones.map(z => `${z.name}: ${Math.round((z.occ/z.cap)*100)}% full`).join(', ');
+  const zoneDetails = zones.map(z => `${z.name} is ${Math.round((z.occ/z.cap)*100)}% full`).join(', ');
 
-  return `You are PITCHSIDE, a friendly stadium operations manager at a FIFA World Cup 2026 match. Someone asks: "${query}"
+  let contextParts = [];
 
-Answer them naturally like a real person talking over the radio (2-3 sentences max).
-Use this live sensor data to answer:
-- Stadium occupancy: ${pct}% (${totalOcc.toLocaleString()}/${totalCap.toLocaleString()} seats occupied)
-- Section detail: ${zoneDetails}
-- Gate C has an 8 min wait, Gate A is 2 min, Gate B is 3 min, Gate D is 4 min
-- Active incidents: congestion at Gate C, medical case in Section E, minor spill in Concourse B
-- Food courts: Concourse A (North) and Concourse D (South), kiosks near every gate
-- Restrooms: all levels, shortest queue at Concourse A
-- Weather: 29C, clear
-- Transit: Metro Line 2 every 4min, parking 78% full
-- Accessibility: Gate 4 ramp clear, Elevator B 6min queue
-- Waste diversion: 62%
+  // Restrooms
+  if (lower.includes('restroom') || lower.includes('toilet') || lower.includes('washroom') || lower.includes('bathroom')) {
+    contextParts.push('Restrooms: Available on all levels. Shortest queues are currently at Concourse A (North side).');
+  }
+  // Food
+  if (lower.includes('food') || lower.includes('stall') || lower.includes('eat') || lower.includes('drink') || lower.includes('kiosk') || lower.includes('hungry') || lower.includes('beverage')) {
+    contextParts.push(`Food & Beverage: Main food courts at Concourse A (North) and Concourse D (South). Smaller kiosks at every gate entrance. Section C is currently quite crowded at ${Math.round((zones[2].occ/zones[2].cap)*100)}% capacity, so nearby kiosks have longer lines.`);
+  }
+  // Gates & Congestion
+  if (lower.includes('gate') || lower.includes('congest') || lower.includes('wait') || lower.includes('crowd') || lower.includes('busy') || lower.includes('queue')) {
+    contextParts.push(`Gate Wait Times & Congestion: Gate A (2 min), Gate B (3 min), Gate C (8 min - elevated wait due to high-severity congestion building at turnstiles), Gate D (4 min). Elevator Bank B has a 6-minute wait.`);
+  }
+  // Transit
+  if (lower.includes('transit') || lower.includes('metro') || lower.includes('bus') || lower.includes('park') || lower.includes('train')) {
+    contextParts.push('Transit & Parking: Metro Line 2 is running at 4-minute intervals. Parking lots are 78% full.');
+  }
+  // Accessibility
+  if (lower.includes('access') || lower.includes('wheelchair') || lower.includes('ramp') || lower.includes('elevator')) {
+    contextParts.push('Accessibility: Ramp at Gate 4 is clear. Elevator Bank B has a 6-minute queue.');
+  }
+  // Weather
+  if (lower.includes('weather') || lower.includes('temp') || lower.includes('hot') || lower.includes('rain')) {
+    contextParts.push('Weather: 29C, clear skies, 68% humidity.');
+  }
+  // Incidents
+  if (lower.includes('incident') || lower.includes('medical') || lower.includes('spill') || lower.includes('doctor') || lower.includes('emergency')) {
+    contextParts.push('Active Incidents: 1 high-severity congestion at Gate C, 1 medical case in Section E (dehydration, attended), 1 minor spill in Concourse B.');
+  }
 
-RULES:
-1. Give a direct answer to the question first.
-2. Suggest a specific recommendation next.
-3. Keep it simple and friendly. No list of stats, no bullet points, no asterisks. Do not repeat the question. Do not mention you are an AI or reading sensors.
+  // Fallback to overall status if no specific entity matches
+  if (contextParts.length === 0) {
+    contextParts.push(`Overall Stadium Status: Occupancy is ${pct}% (${totalOcc.toLocaleString()} of ${totalCap.toLocaleString()} seats). Zone details: ${zoneDetails}. Incidents: 3 open.`);
+  }
+
+  return contextParts.join('\n');
+};
+
+const getCombinedPrompt = (zones, query) => {
+  const context = getContextByNER(query, zones);
+
+  return `You are PITCHSIDE, a friendly stadium operations manager. Answer the question naturally in 2-3 sentences based on the live data provided.
+
+Live Stadium Data:
+${context}
+
+Question: "${query}"
 
 Answer:`;
 };

@@ -9,32 +9,37 @@ const getSystemPrompt = (zones) => {
   const totalOcc = zones.reduce((sum, z) => sum + z.occ, 0);
   const totalCap = zones.reduce((sum, z) => sum + z.cap, 0);
   const pct = Math.round((totalOcc / totalCap) * 100);
-  const zoneDetails = zones.map(z => `- ${z.name}: ${z.occ.toLocaleString()}/${z.cap.toLocaleString()} capacity (${Math.round((z.occ/z.cap)*100)}%) - ${z.level.toUpperCase()} RISK`).join('\n');
+  const zoneDetails = zones.map(z => `${z.name}: ${Math.round((z.occ/z.cap)*100)}% full`).join(', ');
 
-  return `You are PITCHSIDE, an Ops Intelligence AI for venue operations staff at a FIFA World Cup 2026 stadium during a live match.
+  return `You are PITCHSIDE, a stadium operations AI. Answer the user's question using ONLY the data below.
 
-Context you always know:
-- Current stadium occupancy: ${pct}% (${totalOcc.toLocaleString()} of ${totalCap.toLocaleString()} seats filled)
-- Stadium Zone Density:
-${zoneDetails}
-- Active incidents: 3 (1 high-severity congestion at Gate C, 1 medical in Section E, 1 minor spill in concourse B)
-- Weather: 29C, 68% humidity, clear skies
-- Staff on duty: 128 of 140 rostered
-- Entry wait times: Gate A 2min, Gate B 3min, Gate C 8min (elevated), Gate D 4min
-- Sustainability: Waste diversion at 62% (above 60% target)
-- Transit: Metro Line 2 running 4-min intervals, parking lots 78% full
-- Accessibility: Ramp at Gate 4 clear, Elevator Bank B has 6-min queue
-- Food and beverage: Main food courts at Concourse A (North) and Concourse D (South), smaller kiosks at every gate entrance
-- Restrooms: Available at all concourse levels, shortest queues currently at Concourse A
-- Fan zones: Main fan zone at Gate A plaza, family zone near Section B
+DATA: Occupancy ${pct}% (${totalOcc.toLocaleString()}/${totalCap.toLocaleString()}). Zones: ${zoneDetails}. Incidents: congestion Gate C, medical Section E, spill Concourse B. Weather: 29C. Gates: A 2min, B 3min, C 8min, D 4min. Food: Concourse A (North), Concourse D (South), kiosks at gates. Restrooms: all levels, shortest queue Concourse A. Transit: Metro Line 2 every 4min, parking 78%. Accessibility: Gate 4 ramp clear, Elevator B 6min queue. Waste diversion: 62%.
 
-CRITICAL RULES:
-- Output ONLY the final answer. Do NOT show your reasoning, thinking, bullet points, asterisks, or any internal process.
-- Never output lines starting with * or - that describe your thought process.
-- Just give the direct answer in plain sentences, 2-3 sentences max.
-- Be concise and decisive. Never say you are an AI language model or that you cannot access real data.
-- Always respond in character as if you have live sensor feeds.
-- Format: (1) current situation with one data point, (2) actionable recommendation, (3) one-sentence reason why.`;
+RULES:
+1. Reply in EXACTLY 2 to 3 short sentences. No more.
+2. First sentence: Direct yes/no answer or current status with one number.
+3. Second sentence: One specific actionable recommendation.
+4. Third sentence (optional): Brief reason why.
+5. NEVER show thinking, asterisks, bullet points, headers, or reasoning steps.
+6. NEVER repeat yourself. NEVER echo back the question or context.
+7. Respond as if reading live sensors. Be decisive.`;
+};
+
+// Clean up messy AI output
+const cleanResponse = (raw) => {
+  if (!raw) return '';
+  let text = raw
+    .replace(/\*\*?[^*]*\*\*?:?/g, '')    // strip bold markers like **text** or *text*
+    .replace(/^[\s*•\-]+/gm, '')           // strip leading bullets/asterisks per line
+    .replace(/\n{2,}/g, '\n')              // collapse multiple newlines
+    .trim();
+  // Split into sentences, deduplicate, and take only first 3
+  const sentences = text
+    .split(/(?<=[.!?])\s+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 10);
+  const unique = [...new Set(sentences)];
+  return unique.slice(0, 3).join(' ');
 };
 
 const initialZones = [
@@ -93,14 +98,14 @@ const OpsDashboard = () => {
           body: JSON.stringify({
             system_instruction: { parts: [{ text: currentSystemPrompt }] },
             contents: [{ role: 'user', parts: [{ text: query }] }],
-            generationConfig: { temperature: 0.7, maxOutputTokens: 500 },
+            generationConfig: { temperature: 0.4, maxOutputTokens: 150 },
           }),
         });
         const data = await res.json();
         if (!data.error) {
-          const reply = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-          if (reply) {
-            setResponse(reply);
+          const rawReply = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+          if (rawReply) {
+            setResponse(cleanResponse(rawReply));
             setMode('live');
             setIsLoading(false);
             return;
@@ -114,7 +119,7 @@ const OpsDashboard = () => {
         body: JSON.stringify({ message: query, systemPrompt: currentSystemPrompt }),
       });
       const data = await res.json();
-      setResponse(data.reply);
+      setResponse(cleanResponse(data.reply));
       setMode(data.mode || 'demo');
     } catch (_err) {
       setResponse('Temporary signal loss from venue sensors. Please retry your query in a moment.');
@@ -210,7 +215,14 @@ const OpsDashboard = () => {
               ) : (
                 <div className="resp-tag"><i></i>Live AI response</div>
               )}
-              <div className="resp-text">{response}</div>
+              <div className="resp-text">
+                {response.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0).map((sentence, i) => (
+                  <div key={i} style={{display: 'flex', gap: '10px', marginBottom: '8px', alignItems: 'flex-start'}}>
+                    <span style={{color: 'var(--accent)', flexShrink: 0, fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', marginTop: '3px'}}>{i === 0 ? 'STATUS' : i === 1 ? 'ACTION' : 'REASON'}</span>
+                    <span>{sentence.trim()}</span>
+                  </div>
+                ))}
+              </div>
               <div className="resp-meta">
                 <span>SOURCE: Google GenAI</span>
                 <span>MODEL: {MODEL}</span>

@@ -70,9 +70,9 @@ describe('Smart Stadium Application - Edge Cases', () => {
   test('OpsDashboard: handles successful API response (LIVE mode)', async () => {
     global.fetch.mockResolvedValueOnce({
       json: async () => ({ 
-        reply: "Gate A is clear.", 
+        reply: '{"status":"Gate A is clear."}', 
         mode: "live",
-        candidates: [{ content: { parts: [{ text: "Gate A is clear." }] } }]
+        candidates: [{ content: { parts: [{ text: '{"status":"Gate A is clear."}' }] } }]
       }),
     });
 

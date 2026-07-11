@@ -11,41 +11,30 @@ const getSystemPrompt = (zones) => {
   const pct = Math.round((totalOcc / totalCap) * 100);
   const zoneDetails = zones.map(z => `${z.name}: ${Math.round((z.occ/z.cap)*100)}% full`).join(', ');
 
-  return `You are PITCHSIDE, a friendly and decisive stadium operations manager at a FIFA World Cup 2026 match. A colleague just asked you a question. Answer them naturally, like a real person talking.
+  return `You are PITCHSIDE, a friendly stadium operations manager at a FIFA World Cup 2026 match. Answer your colleague naturally based on this LIVE SENSOR DATA:
+Occupancy: ${pct}% (${totalOcc.toLocaleString()}/${totalCap.toLocaleString()}). Zone density: ${zoneDetails}. Incidents: congestion Gate C (8min wait), medical case Section E, minor spill Concourse B. Weather: 29C. Food: Concourse A (North), Concourse D (South), gate kiosks. Restrooms: all levels, shortest Concourse A. Transit: Metro Line 2 every 4min, parking 78%. Accessibility: Gate 4 ramp clear, Elevator B 6min queue. Waste: 62%.
 
-LIVE SENSOR DATA:
-Stadium occupancy: ${pct}% (${totalOcc.toLocaleString()} of ${totalCap.toLocaleString()} seats). Zone density: ${zoneDetails}. Active incidents: congestion at Gate C (8min wait), medical case in Section E, minor spill in Concourse B. Weather: 29C, clear. Food courts at Concourse A (North) and Concourse D (South), plus small kiosks near every gate. Restrooms on all levels, shortest queues at Concourse A. Transit: Metro Line 2 running every 4min, parking 78% full. Accessibility: Gate 4 ramp clear, Elevator B has 6min queue. Waste diversion: 62%.
+You MUST output exactly ONE valid JSON object with these keys:
+- "status": A direct, conversational sentence answering the question with a key fact.
+- "action": A clear, conversational recommendation sentence.
+- "reason": A brief conversational reason why.
 
-HOW TO RESPOND:
-- Talk like a helpful colleague, not a robot. Use plain everyday English.
-- Start with a direct answer (yes, no, or the key fact).
-- Then give one clear recommendation.
-- Keep it to 2-3 sentences total. No more.
-- Do NOT list raw data, do NOT use bullet points, asterisks, or headers.
-- Do NOT repeat yourself or echo back the question.
-
-EXAMPLE:
-Question: "Is it crowded near the food stalls?"
-Answer: "Yes, the food area near Section C is quite packed since that zone is at 90% capacity right now. I'd recommend heading to the Concourse A food court in the North stand instead, it's much quieter over there at around 40%."
-
-Now answer the user's question naturally:`;
+JSON EXAMPLE:
+{
+  "status": "Yes, the food area near Section C is quite packed right now at 90% capacity.",
+  "action": "I'd recommend directing them to the Concourse A food court in the North stand instead.",
+  "reason": "It's much quieter over there at around 40% full."
+}`;
 };
 
-// Clean up messy AI output
-const cleanResponse = (raw) => {
-  if (!raw) return '';
-  let text = raw
-    .replace(/\*\*?[^*]*\*\*?:?/g, '')    // strip bold markers like **text** or *text*
-    .replace(/^[\s*•\-]+/gm, '')           // strip leading bullets/asterisks per line
-    .replace(/\n{2,}/g, '\n')              // collapse multiple newlines
-    .trim();
-  // Split into sentences, deduplicate, and take only first 3
-  const sentences = text
-    .split(/(?<=[.!?])\s+/)
-    .map(s => s.trim())
-    .filter(s => s.length > 10);
-  const unique = [...new Set(sentences)];
-  return unique.slice(0, 3).join(' ');
+const parseResponse = (raw) => {
+  if (!raw) return null;
+  try {
+    let text = raw.replace(/```json/g, '').replace(/```/g, '').trim();
+    return JSON.parse(text);
+  } catch (e) {
+    return { status: 'Unable to parse data stream.', action: 'Please rephrase your query.', reason: 'Signal interference.' };
+  }
 };
 
 const initialZones = [
@@ -104,14 +93,14 @@ const OpsDashboard = () => {
           body: JSON.stringify({
             system_instruction: { parts: [{ text: currentSystemPrompt }] },
             contents: [{ role: 'user', parts: [{ text: query }] }],
-            generationConfig: { temperature: 0.5, maxOutputTokens: 200 },
+            generationConfig: { temperature: 0.5, maxOutputTokens: 200, responseMimeType: 'application/json' },
           }),
         });
         const data = await res.json();
         if (!data.error) {
           const rawReply = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
           if (rawReply) {
-            setResponse(cleanResponse(rawReply));
+            setResponse(parseResponse(rawReply));
             setMode('live');
             setIsLoading(false);
             return;
@@ -125,10 +114,10 @@ const OpsDashboard = () => {
         body: JSON.stringify({ message: query, systemPrompt: currentSystemPrompt }),
       });
       const data = await res.json();
-      setResponse(cleanResponse(data.reply));
+      setResponse(parseResponse(data.reply));
       setMode(data.mode || 'demo');
     } catch (_err) {
-      setResponse('Temporary signal loss from venue sensors. Please retry your query in a moment.');
+      setResponse({ status: 'Temporary signal loss from venue sensors.', action: 'Please retry your query in a moment.', reason: '' });
       setMode('demo');
     } finally {
       setIsLoading(false);
@@ -222,12 +211,24 @@ const OpsDashboard = () => {
                 <div className="resp-tag"><i></i>Live AI response</div>
               )}
               <div className="resp-text">
-                {response.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0).map((sentence, i) => (
-                  <div key={i} style={{display: 'flex', gap: '10px', marginBottom: '8px', alignItems: 'flex-start'}}>
-                    <span style={{color: 'var(--accent)', flexShrink: 0, fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', marginTop: '3px'}}>{i === 0 ? 'STATUS' : i === 1 ? 'ACTION' : 'REASON'}</span>
-                    <span>{sentence.trim()}</span>
+                {response.status && (
+                  <div style={{display: 'flex', gap: '10px', marginBottom: '8px', alignItems: 'flex-start'}}>
+                    <span style={{color: 'var(--accent)', flexShrink: 0, fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', marginTop: '3px', minWidth: '45px'}}>STATUS</span>
+                    <span>{response.status}</span>
                   </div>
-                ))}
+                )}
+                {response.action && (
+                  <div style={{display: 'flex', gap: '10px', marginBottom: '8px', alignItems: 'flex-start'}}>
+                    <span style={{color: 'var(--accent)', flexShrink: 0, fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', marginTop: '3px', minWidth: '45px'}}>ACTION</span>
+                    <span>{response.action}</span>
+                  </div>
+                )}
+                {response.reason && (
+                  <div style={{display: 'flex', gap: '10px', marginBottom: '8px', alignItems: 'flex-start'}}>
+                    <span style={{color: 'var(--accent)', flexShrink: 0, fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', marginTop: '3px', minWidth: '45px'}}>REASON</span>
+                    <span>{response.reason}</span>
+                  </div>
+                )}
               </div>
               <div className="resp-meta">
                 <span>SOURCE: Google GenAI</span>

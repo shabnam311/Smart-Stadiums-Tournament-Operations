@@ -9,30 +9,62 @@ const getSystemPrompt = (zones) => {
   const pct = Math.round((totalOcc / totalCap) * 100);
   const zoneDetails = zones.map(z => `${z.name}: ${Math.round((z.occ/z.cap)*100)}% full`).join(', ');
 
-  return `You are PITCHSIDE, a friendly stadium operations manager at a FIFA World Cup 2026 match. Answer your colleague naturally based on this LIVE SENSOR DATA:
-Occupancy: ${pct}% (${totalOcc.toLocaleString()}/${totalCap.toLocaleString()}). Zone density: ${zoneDetails}. Incidents: congestion Gate C (8min wait), medical case Section E, minor spill Concourse B. Weather: 29C. Food: Concourse A (North), Concourse D (South), gate kiosks. Restrooms: all levels, shortest Concourse A. Transit: Metro Line 2 every 4min, parking 78%. Accessibility: Gate 4 ramp clear, Elevator B 6min queue. Waste: 62%.
+  return `You are a friendly stadium operations manager named PITCHSIDE at a FIFA World Cup 2026 match. Someone on your team just asked you a question over the radio. Answer them the way a real person would talk - short, clear, and helpful.
 
-You MUST output exactly ONE valid JSON object with these keys:
-- "status": A direct, conversational sentence answering the question with a key fact.
-- "action": A clear, conversational recommendation sentence.
-- "reason": A brief conversational reason why.
+Here is what your sensors are showing right now:
+- Stadium is ${pct}% full (${totalOcc.toLocaleString()} out of ${totalCap.toLocaleString()} seats taken)
+- ${zoneDetails}
+- Gate C has an 8 minute wait, Gate A is 2 min, Gate B is 3 min, Gate D is 4 min
+- There is congestion at Gate C, a medical case in Section E, and a minor spill in Concourse B
+- Food courts are at Concourse A (North) and Concourse D (South), plus small kiosks near every gate
+- Restrooms are on all levels, shortest queues at Concourse A
+- Weather is 29 degrees and clear
+- Metro Line 2 runs every 4 minutes, parking is 78% full
+- Gate 4 ramp is clear for wheelchair access, Elevator B has a 6 minute queue
+- Waste diversion is at 62% which is above the 60% target
 
-JSON EXAMPLE:
-{
-  "status": "Yes, the food area near Section C is quite packed right now at 90% capacity.",
-  "action": "I'd recommend directing them to the Concourse A food court in the North stand instead.",
-  "reason": "It's much quieter over there at around 40% full."
-}`;
+IMPORTANT RULES:
+1. Answer in 2-3 simple sentences that anyone can understand.
+2. First say the answer directly. Then suggest what to do. Then briefly say why.
+3. Talk like a normal person. Do NOT use jargon, bullet points, asterisks, or technical formatting.
+4. Do NOT repeat yourself. Do NOT echo the question back. Do NOT list raw data.
+5. Do NOT say you are an AI or mention sensors or data streams.
+
+Here are examples of good answers:
+
+Q: Are the food stalls crowded?
+A: Yes, the food area near Section C is pretty packed right now since that zone is at 90% capacity. Head over to the Concourse A food court on the North side instead, it is much quieter at around 40% full.
+
+Q: Are the restrooms occupied?
+A: Restrooms are available on all levels, but the ones near Concourse A have the shortest lines right now. I would suggest heading there if you want to avoid waiting.
+
+Q: How is the weather?
+A: It is 29 degrees and clear outside right now. Make sure to stay hydrated, especially if you are in the uncovered sections.
+
+Now answer the following question in the same simple, friendly style:`;
 };
 
-const parseResponse = (raw) => {
-  if (!raw) return null;
-  try {
-    let text = raw.replace(/```json/g, '').replace(/```/g, '').trim();
-    return JSON.parse(text);
-  } catch {
-    return { status: 'Unable to parse data stream.', action: 'Please rephrase your query.', reason: 'Signal interference.' };
-  }
+const cleanResponse = (raw) => {
+  if (!raw) return '';
+  let text = raw
+    .replace(/```[\s\S]*?```/g, '')        // remove code blocks
+    .replace(/\{[\s\S]*?\}/g, '')          // remove JSON objects
+    .replace(/\*\*([^*]+)\*\*/g, '$1')     // unbold **text**
+    .replace(/\*([^*]+)\*/g, '$1')         // unitalic *text*
+    .replace(/^[\s*\-\u2022>#]+/gm, '')    // strip leading bullets, arrows, hashes
+    .replace(/\n+/g, ' ')                  // join lines into one paragraph
+    .replace(/\s{2,}/g, ' ')              // collapse multiple spaces
+    .trim();
+  // Deduplicate repeated sentences
+  const sentences = text.split(/(?<=[.!?])\s+/).filter(s => s.length > 5);
+  const seen = new Set();
+  const unique = sentences.filter(s => {
+    const key = s.toLowerCase().replace(/[^a-z]/g, '');
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  return unique.slice(0, 3).join(' ');
 };
 
 const initialZones = [
@@ -89,14 +121,14 @@ const OpsDashboard = () => {
           body: JSON.stringify({
             system_instruction: { parts: [{ text: currentSystemPrompt }] },
             contents: [{ role: 'user', parts: [{ text: query }] }],
-            generationConfig: { temperature: 0.5, maxOutputTokens: 200, responseMimeType: 'application/json' },
+            generationConfig: { temperature: 0.6, maxOutputTokens: 250 },
           }),
         });
         const data = await res.json();
         if (!data.error) {
           const rawReply = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
           if (rawReply) {
-            setResponse(parseResponse(rawReply));
+            setResponse(cleanResponse(rawReply));
             setMode('live');
             setIsLoading(false);
             return;
@@ -110,10 +142,10 @@ const OpsDashboard = () => {
         body: JSON.stringify({ message: query, systemPrompt: currentSystemPrompt }),
       });
       const data = await res.json();
-      setResponse(parseResponse(data.reply));
+      setResponse(cleanResponse(data.reply));
       setMode(data.mode || 'demo');
     } catch {
-      setResponse({ status: 'Temporary signal loss from venue sensors.', action: 'Please retry your query in a moment.', reason: '' });
+      setResponse('Temporary signal loss from venue sensors. Please retry your query in a moment.');
       setMode('demo');
     } finally {
       setIsLoading(false);
@@ -206,26 +238,7 @@ const OpsDashboard = () => {
               ) : (
                 <div className="resp-tag"><i></i>Live AI response</div>
               )}
-              <div className="resp-text">
-                {response.status && (
-                  <div style={{display: 'flex', gap: '10px', marginBottom: '8px', alignItems: 'flex-start'}}>
-                    <span style={{color: 'var(--accent)', flexShrink: 0, fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', marginTop: '3px', minWidth: '45px'}}>STATUS</span>
-                    <span>{response.status}</span>
-                  </div>
-                )}
-                {response.action && (
-                  <div style={{display: 'flex', gap: '10px', marginBottom: '8px', alignItems: 'flex-start'}}>
-                    <span style={{color: 'var(--accent)', flexShrink: 0, fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', marginTop: '3px', minWidth: '45px'}}>ACTION</span>
-                    <span>{response.action}</span>
-                  </div>
-                )}
-                {response.reason && (
-                  <div style={{display: 'flex', gap: '10px', marginBottom: '8px', alignItems: 'flex-start'}}>
-                    <span style={{color: 'var(--accent)', flexShrink: 0, fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', marginTop: '3px', minWidth: '45px'}}>REASON</span>
-                    <span>{response.reason}</span>
-                  </div>
-                )}
-              </div>
+              <div className="resp-text">{response}</div>
               <div className="resp-meta">
                 <span>SOURCE: Google GenAI</span>
                 <span>MODEL: {MODEL}</span>

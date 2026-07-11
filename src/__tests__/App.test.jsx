@@ -70,9 +70,9 @@ describe('Smart Stadium Application - Edge Cases', () => {
   test('OpsDashboard: handles successful API response (LIVE mode)', async () => {
     global.fetch.mockResolvedValueOnce({
       json: async () => ({ 
-        reply: '{"status":"Gate A is clear."}', 
+        reply: "Gate A is clear right now with only a 2 minute wait.", 
         mode: "live",
-        candidates: [{ content: { parts: [{ text: '{"status":"Gate A is clear."}' }] } }]
+        candidates: [{ content: { parts: [{ text: "Gate A is clear right now with only a 2 minute wait." }] } }]
       }),
     });
 
@@ -90,7 +90,7 @@ describe('Smart Stadium Application - Edge Cases', () => {
     expect(screen.getByText(/Generating/i)).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(screen.getByText("Gate A is clear.")).toBeInTheDocument();
+      expect(screen.getByText(/Gate A is clear/i)).toBeInTheDocument();
       expect(screen.getByText(/Live AI response/i)).toBeInTheDocument();
     });
   });

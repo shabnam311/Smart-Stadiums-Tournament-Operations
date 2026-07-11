@@ -16,22 +16,26 @@ export default async function handler(req, res) {
   const getMockResponse = (msg) => {
     const lower = msg.toLowerCase();
     if (lower.includes('gate c'))
-      return `{"status":"Gate C entry rate is currently 22/min against a 15/min comfort threshold.","action":"Recommend opening auxiliary turnstiles C4-C6 for the next 20 minutes.","reason":"At this pace the queue will exceed 200 people within 8 minutes and create a safety bottleneck."}`;
+      return `Gate C entry rate is currently 22 per minute against a comfortable limit of 15. I would recommend opening the auxiliary turnstiles C4 to C6 for the next 20 minutes to ease the backlog.`;
     if (lower.includes('second half') || lower.includes('fullest'))
-      return `{"status":"Section G (West Stand) is trending toward 92% occupancy by second half based on current entry velocity.","action":"Suggest pre-positioning two additional marshals at the West concourse now.","reason":"Historical data shows lateral crowd movement spikes at halftime and G has limited exit width."}`;
+      return `Section G in the West Stand is trending toward 92% occupancy by second half. I would suggest positioning two additional marshals at the West concourse now, because crowd movement tends to spike at halftime and that area has limited exit width.`;
     if (lower.includes('route') || lower.includes('access'))
-      return `{"status":"The ramp at Gate 4 is currently clear with no stairs, making it the shortest accessible route to Section D at 30m.","action":"Recommend directing wheelchair users there instead of Gate 2.","reason":"Elevator Bank B has a 6-minute wait queue right now."}`;
+      return `The ramp at Gate 4 is clear right now, making it the fastest accessible route to Section D at about 30 metres. I would suggest directing wheelchair users there instead of Gate 2, because the Elevator B queue is about 6 minutes long.`;
     if (lower.includes('weather') || lower.includes('temperature'))
-      return `{"status":"Current temperature is 29C with humidity at 68%.","action":"Recommend increasing water station staffing at Sections C and G.","reason":"Dehydration incidents historically spike when humidity exceeds 60% during evening matches."}`;
+      return `It is 29 degrees and clear outside with humidity at 68%. I would recommend increasing water station staffing near Sections C and G, because dehydration incidents tend to spike when humidity is this high during evening matches.`;
     if (lower.includes('incident') || lower.includes('medical'))
-      return `{"status":"Three open incidents currently logged, one high-severity congestion event at Gate C. Medical team has attended the dehydration case in Section E.","action":"Recommend keeping the triage station at Gate B on standby.","reason":"Entry-phase crowd density correlates with post-entry medical calls."}`;
+      return `There are three open incidents right now. The most serious one is congestion at Gate C. The medical team has already attended to a dehydration case in Section E, and a minor spill in Concourse B is being cleaned up.`;
     if (lower.includes('staff') || lower.includes('marshal'))
-      return `{"status":"128 of 140 rostered staff currently on duty, with 3 marshals assigned to the West concourse.","action":"Recommend redeploying 2 idle marshals from Gate A (currently at low flow) to Gate C.","reason":"Gate C is running at 147% of its comfortable throughput rate."}`;
+      return `We have 128 out of 140 rostered staff on duty right now. I would recommend moving 2 idle marshals from Gate A over to Gate C, because Gate C is handling way more people than it comfortably should.`;
     if (lower.includes('waste') || lower.includes('recycl') || lower.includes('sustain'))
-      return `{"status":"Waste diversion is at 62%, above the 60% sustainability target. However, recycling stations near Section G are at full capacity.","action":"Recommend dispatching maintenance now.","reason":"Section G's post-halftime foot traffic will make access difficult in 15 minutes."}`;
+      return `Waste diversion is at 62% which is above our 60% target, so that is looking good. However, the recycling stations near Section G are full and need emptying before halftime foot traffic makes access difficult.`;
     if (lower.includes('seat') || lower.includes('capacity') || lower.includes('free'))
-      return `{"status":"Overall stadium occupancy is at 71% with Sections A and D showing the most availability at approximately 40% filled.","action":"Recommend directing late arrivals to Gate A (North).","reason":"It has the shortest queue and direct access to available seating."}`;
-    return `{"status":"Based on current venue signals, all systems are nominal.","action":"Ask about a specific area (gates, sections, accessibility, transit) for a targeted recommendation.","reason":""}`;
+      return `The stadium is about 71% full overall. Sections A and D have the most available seats at around 40% filled. I would direct late arrivals to Gate A on the North side since it has the shortest queue.`;
+    if (lower.includes('food') || lower.includes('stall') || lower.includes('eat'))
+      return `The food area near Section C is pretty busy since that zone is at about 90% capacity. I would recommend heading to the Concourse A food court on the North side instead, it is much quieter over there.`;
+    if (lower.includes('restroom') || lower.includes('toilet') || lower.includes('bathroom'))
+      return `Restrooms are available on all concourse levels. The ones near Concourse A have the shortest lines right now, so I would suggest heading there if you want to avoid a wait.`;
+    return `Everything looks good across the stadium right now. If you have a question about a specific area like the gates, food courts, restrooms, or accessibility, just ask and I can give you the latest update.`;
   };
 
   if (!apiKey || apiKey === 'your_gemini_api_key_here') {
@@ -49,9 +53,8 @@ export default async function handler(req, res) {
       contents: message,
       config: {
         systemInstruction: robustPrompt,
-        temperature: 0.5,
-        maxOutputTokens: 200,
-        responseMimeType: 'application/json'
+        temperature: 0.6,
+        maxOutputTokens: 250
       }
     });
 

@@ -5,7 +5,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { message, query } = req.body;
+  const { message, query, systemPrompt } = req.body;
   if (!message) {
     return res.status(400).json({ error: 'Message is required' });
   }
@@ -46,13 +46,18 @@ export default async function handler(req, res) {
   const ai = new GoogleGenAI({ apiKey });
 
   try {
+    const config = {
+      temperature: 0.6,
+      maxOutputTokens: 250
+    };
+    if (systemPrompt) {
+      config.systemInstruction = systemPrompt;
+    }
+
     const response = await ai.models.generateContent({
       model: 'gemma-4-26b-a4b-it',
       contents: message,
-      config: {
-        temperature: 0.6,
-        maxOutputTokens: 250
-      }
+      config
     });
 
     const reply = response.text?.trim();

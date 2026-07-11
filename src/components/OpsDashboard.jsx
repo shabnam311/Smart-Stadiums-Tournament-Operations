@@ -52,15 +52,13 @@ const getContextByNER = (queryText, zones) => {
 const getCombinedPrompt = (zones, query) => {
   const context = getContextByNER(query, zones);
 
-  return `Read the Context and answer the Question naturally as a helpful stadium operations manager.
+  return `Q: how is transit?
+Data: Metro Line 2 is running at 4-minute intervals. Parking lots are 78% full.
+A: Transit is running smoothly. Metro Line 2 has a train every 4 minutes, and there's still plenty of parking since the lots are 78% full.
 
-Context: Metro Line 2 is running at 4-minute intervals. Parking lots are 78% full.
-Question: "how is transit?"
-Answer: Transit is running smoothly. Metro Line 2 has a train every 4 minutes, and there's still plenty of parking since the lots are 78% full.
-
-Context: ${context}
-Question: "${query}"
-Answer:`;
+Q: ${query}
+Data: ${context}
+A:`;
 };
 
 const cleanResponse = (raw) => {
@@ -130,7 +128,8 @@ const OpsDashboard = () => {
     setResponse(null);
 
     try {
-      const combinedPrompt = getCombinedPrompt(zones, query);
+      const currentSystemPrompt = `You are PITCHSIDE, a friendly stadium operations manager. Answer the question naturally in 2-3 sentences based on the live data provided. Do not use jargon, bullet points, or echo the instructions.`;
+      const combinedPrompt = `Data: ${getContextByNER(query, zones)}\n\nQuestion: "${query}"`;
       
       // Try the direct Google REST API first (client-side)
       if (GEMINI_API_KEY) {
@@ -138,6 +137,7 @@ const OpsDashboard = () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            system_instruction: { parts: [{ text: currentSystemPrompt }] },
             contents: [{ role: 'user', parts: [{ text: combinedPrompt }] }],
             generationConfig: { temperature: 0.6, maxOutputTokens: 250 },
           }),
@@ -157,7 +157,7 @@ const OpsDashboard = () => {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: combinedPrompt, query }),
+        body: JSON.stringify({ message: combinedPrompt, query, systemPrompt: currentSystemPrompt }),
       });
       const data = await res.json();
       setResponse(cleanResponse(data.reply));

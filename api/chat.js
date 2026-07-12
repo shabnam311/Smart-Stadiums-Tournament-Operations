@@ -92,17 +92,8 @@ export default async function handler(req) {
       return streamFallback(getMockResponse(query), `Gemini API returned ${geminiRes.status}: ${errText}`);
     }
 
-    // Intercept stream to inject named event "live"
-    const transformStream = new TransformStream({
-      transform(chunk, controller) {
-        const text = new TextDecoder().decode(chunk);
-        // Replace all "data: " with "event: live\ndata: "
-        const modified = text.replace(/^data:/gm, 'event: live\ndata:');
-        controller.enqueue(new TextEncoder().encode(modified));
-      }
-    });
-
-    return new Response(geminiRes.body.pipeThrough(transformStream), {
+    // Forward the SSE stream directly
+    return new Response(geminiRes.body, {
       headers: { 'Content-Type': 'text/event-stream' },
     });
   } catch (error) {

@@ -1,20 +1,13 @@
-export const config = { runtime: 'edge' };
-
-export default async function handler(req) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method Not Allowed' }), { status: 405 });
+    res.status(405).json({ error: 'Method Not Allowed' });
+    return;
   }
 
-  let body;
-  try {
-    body = await req.json();
-  } catch (e) {
-    return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400 });
-  }
-
-  const { query, state } = body;
+  const { query, state } = req.body || {};
   if (!query) {
-    return new Response(JSON.stringify({ error: 'Query is required' }), { status: 400 });
+    res.status(400).json({ error: 'Query is required' });
+    return;
   }
 
   const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
@@ -49,16 +42,12 @@ export default async function handler(req) {
       candidates: [{ content: { parts: [{ text: text }] } }]
     });
     
-    const stream = new ReadableStream({
-      start(controller) {
-        controller.enqueue(new TextEncoder().encode(`event: fallback\ndata: ${ssePayload}\n\n`));
-        controller.close();
-      }
-    });
-
-    return new Response(stream, {
-      headers: { 'Content-Type': 'text/event-stream' }
-    });
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    
+    res.write(`event: fallback\ndata: ${ssePayload}\n\n`);
+    res.end();
   };
 
   if (!apiKey) {
@@ -92,10 +81,19 @@ export default async function handler(req) {
       return streamFallback(getMockResponse(query), `Gemini API returned ${geminiRes.status}: ${errText}`);
     }
 
-    // Forward the SSE stream directly
-    return new Response(geminiRes.body, {
-      headers: { 'Content-Type': 'text/event-stream' },
-    });
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    // Read the fetch stream and write directly to standard Node response
+    const reader = geminiRes.body.getReader();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      res.write(value);
+    }
+    res.end();
+
   } catch (error) {
     return streamFallback(getMockResponse(query), `Gemini Request Error: ${error.message}`);
   }

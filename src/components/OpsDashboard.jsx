@@ -136,7 +136,7 @@ ${JSON.stringify(getFullStateSnapshot(liveWeather), null, 2)}`;
                 scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
               }
             }
-          } catch (e) {
+          } catch {
             // ignore JSON parse errors for incomplete chunks
           }
         }

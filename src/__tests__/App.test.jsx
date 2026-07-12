@@ -131,7 +131,7 @@ describe('Smart Stadium Application - Edge Cases', () => {
     await waitFor(() => {
       // The frontend defense mechanism 'cleanResponse' catches raw JSON leaks
       expect(screen.getByText(/Signal interrupted/i)).toBeInTheDocument();
-      expect(screen.queryByText(/\"query\"/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/"query"/)).not.toBeInTheDocument();
     });
   });
 

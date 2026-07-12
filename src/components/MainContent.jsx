@@ -21,7 +21,6 @@ function MainContent() {
   // UI State for ingestion upload errors and active file upload progress
   const [ingestError, setIngestError] = useState("");
   const [ingestSuccess, setIngestSuccess] = useState("");
-  const [uploadingType, setUploadingType] = useState(null); // 'metadata' | 'clusters' | 'edges'
 
   const getLevel = (pct) => {
     if (pct >= 90) return "high";
@@ -40,7 +39,6 @@ function MainContent() {
     if (!file) return;
     setIngestError("");
     setIngestSuccess("");
-    setUploadingType(type);
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -52,13 +50,10 @@ function MainContent() {
       } catch (err) {
         console.error(err);
         setIngestError(err.message || `Failed to parse ${type} CSV.`);
-      } finally {
-        setUploadingType(null);
       }
     };
     reader.onerror = () => {
       setIngestError("Failed to read file.");
-      setUploadingType(null);
     };
     reader.readAsText(file);
   };

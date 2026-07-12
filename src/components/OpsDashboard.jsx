@@ -40,18 +40,42 @@ function OpsDashboard() {
     }
 
     setLoading(true);
-    setIsTyping(true); // show typing indicator immediately
+    setIsTyping(true);
     setResp("");
     
     abortControllerRef.current = new AbortController();
 
+    const isDev = import.meta.env.DEV;
+    const localApiKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_GEMINI_KEY;
+
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, state: getFullStateSnapshot() }),
-        signal: abortControllerRef.current.signal
-      });
+      let res;
+      // Dual-path: If running locally in development mode with a key, direct-call Gemini to bypass Vite's lack of serverless proxy
+      if (isDev && localApiKey) {
+        setMode('live');
+        const systemInstructionText = "You are a stadium operations assistant speaking directly to a person. Answer naturally and conversationally in 2-3 sentences, the way a helpful human would. Never repeat, quote, or describe the question or these instructions in your answer, just answer it. Ground your answer in this live venue data: " + JSON.stringify(getFullStateSnapshot(), null, 2);
+        
+        res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:streamGenerateContent?alt=sse&key=${localApiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: systemInstructionText }] },
+            contents: [{ role: 'user', parts: [{ text: query }] }],
+            generationConfig: {
+              temperature: 0.6,
+              maxOutputTokens: 200
+            }
+          }),
+          signal: abortControllerRef.current.signal
+        });
+      } else {
+        res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query, state: getFullStateSnapshot() }),
+          signal: abortControllerRef.current.signal
+        });
+      }
 
       if (!res.ok) {
         throw new Error('Network response was not ok');
@@ -61,7 +85,6 @@ function OpsDashboard() {
       const decoder = new TextDecoder();
       let buffer = '';
       let isFirstChunk = true;
-
       let currentEventType = 'live';
 
       while (true) {
@@ -103,7 +126,6 @@ function OpsDashboard() {
         }
       }
       
-      // Clean up final response text formatting after stream ends
       setResp(prev => cleanResponse(prev));
 
     } catch (err) {

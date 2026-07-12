@@ -187,13 +187,16 @@ function OpsDashboard() {
           </div>
           <div className="resp-shell" ref={scrollRef}>
             {!resp && !isTyping && <div className="resp-empty">Response will appear here</div>}
-            {isTyping && <div className="resp-empty typing-indicator">· ·· ···</div>}
-            {(resp || (loading && !isTyping)) && (
+            {(resp || isTyping || loading) && (
               <div>
                 <div className={"resp-mode " + (mode === 'live' ? 'live' : '')}>
-                  {mode === 'demo' ? 'Fallback' : 'Live response'}
+                  {loading 
+                    ? (mode === 'live' ? 'Connecting to Live AI…' : 'Generating Fallback…') 
+                    : (mode === 'demo' ? 'Fallback' : 'Live response')
+                  }
                 </div>
-                <div className="resp-text" style={{ whiteSpace: 'pre-wrap' }}>{resp}</div>
+                {isTyping && <div className="resp-empty typing-indicator">· ·· ···</div>}
+                {resp && <div className="resp-text" style={{ whiteSpace: 'pre-wrap' }}>{resp}</div>}
               </div>
             )}
           </div>

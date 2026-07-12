@@ -9,26 +9,27 @@ This project was built specifically for **Hack2Skill PromptWars Challenge 4: Sma
 
 Here is how PITCHSIDE nails the criteria:
 - **Operational Intelligence & Real-time Decision Support:** Instead of a generic chatbot, this is a tactical engine. Staff query the AI about specific incidents (e.g., "Gate C is congested"), and the AI reasons about crowd density, weather, and incidents to give actionable recommendations.
+- **Dynamic CSV Ingestion:** Powered by **PapaParse**, venue operations can drag-and-drop live `csv` datasets (Crowd Movement, Incidents, Staff Roster) to dynamically update the stadium state and AI context on the fly without reloading the page.
 - **Crowd Management:** Live-updating stadium zones and wait-time KPIs provide a direct response to the crowd management requirement.
 - **Sustainability & Accessibility:** Built-in tracking for "Waste Diverted" and medical/accessibility incidents directly aligns with the challenge's core themes.
 
 ## Key Features
 
-1. **Free Tier AI via Google Gemma 4**
-   The live Ops Intelligence feed utilizes the 100% free **Google Gemma 4 (`gemma-4-26b-a4b-it`)** model via the Gemini API, ensuring highly accurate, context-aware responses with no billing constraints.
+1. **Lightning Fast AI via Google Gemini 3.5 Flash**
+   The live Ops Intelligence feed utilizes the lightning-fast **Google Gemini 3.5 Flash** model via the official `@google/genai` SDK, streaming responses using Server-Sent Events (SSE) for zero-latency operations.
 
 2. **Dual-Architecture AI Connection**
-   - **Client-Side Generation:** For lowest latency and edge deployments, the application contacts the Google REST API directly using `VITE_GEMINI_KEY`.
-   - **Serverless Fallback:** Gracefully falls back to a secure `/api/chat` Vercel function (Demo/Reconnecting mode) if direct client limits or network boundaries are hit.
+   - **Serverless API:** The primary pipeline routes through a secure `/api/chat` Vercel function to keep API tokens completely hidden from the browser.
+   - **Client-Side Fallback:** For local development or extreme low-latency edge testing, the application gracefully falls back to contact the Google REST API directly using `VITE_GEMINI_KEY`.
 
-3. **High-Fidelity Operations UI**
+3. **Resilient API Key Management**
+   The serverless proxy supports `GEMINI_API_KEY`, `VITE_GEMINI_API_KEY`, `VITE_GEMINI_KEY`, and `GEMINI_KEY` to guarantee out-of-the-box compatibility regardless of how you configure your deployment environments.
+
+4. **High-Fidelity Operations UI**
    Features a meticulously designed "Intelligence Ops" layout, incorporating live-updating KPI strips, interactive crowd density bar charts, and a real-time event feed.
 
-4. **Automated Unit Testing**
-   Configured with Vitest and React Testing Library. Components are fully tested for reliable rendering, robust UI accessibility (a11y), and edge-case tracking (network timeouts, empty states).
-
-5. **Dynamic Routing**
-   Integrated with `react-router-dom` to support modular navigation across multiple dashboards in future iterations.
+5. **Automated Unit Testing & Linting**
+   Configured with Vitest, React Testing Library, and oxlint. Components are fully tested for reliable rendering, robust UI accessibility (a11y), and edge-case tracking (network timeouts, empty states, malicious inputs).
 
 ## Quick Start
 
@@ -45,11 +46,11 @@ cp .env.example .env
 ```
 Inside `.env`, set:
 ```env
-# Required for local development direct streaming fallback (Vite)
-VITE_GEMINI_KEY=your_gemini_api_key_here
-
-# Required for local vercel dev server testing
+# Required for local vercel dev server testing (Primary Backend)
 GEMINI_API_KEY=your_gemini_api_key_here
+
+# Required for local development direct streaming fallback (Vite UI)
+VITE_GEMINI_KEY=your_gemini_api_key_here
 ```
 *(Ensure you do NOT commit your `.env` file to version control. It is already added to `.gitignore`).*
 
@@ -65,6 +66,4 @@ npm run test
 ```
 
 ## Deployment
-This project is configured for one-click deployment on **Vercel**. When deploying, ensure you add the **`GEMINI_API_KEY`** environment variable in your Vercel Project Settings under Environment Variables (check Production & Preview). 
-
-*(Note: The serverless proxy in `api/chat.js` supports four fallbacks `GEMINI_API_KEY`, `VITE_GEMINI_API_KEY`, `VITE_GEMINI_KEY`, and `GEMINI_KEY` for deployment resilience).*
+This project is configured for one-click deployment on **Vercel**. When deploying, ensure you add the **`GEMINI_API_KEY`** environment variable in your Vercel Project Settings under Environment Variables (check Production & Preview).

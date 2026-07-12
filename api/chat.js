@@ -42,9 +42,12 @@ export default async function handler(req, res) {
       candidates: [{ content: { parts: [{ text: text }] } }]
     });
     
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
+    if (!res.headersSent) {
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.setHeader('X-Accel-Buffering', 'no');
+    }
     
     res.write(`event: fallback\ndata: ${ssePayload}\n\n`);
     res.end();
@@ -84,14 +87,24 @@ export default async function handler(req, res) {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
 
-    // Read the fetch stream and write directly to standard Node response
-    const reader = geminiRes.body.getReader();
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      res.write(value);
+    // Read the fetch stream safely, checking if it is a Web stream (getReader) or Node stream (for-await)
+    if (geminiRes.body && typeof geminiRes.body.getReader === 'function') {
+      const reader = geminiRes.body.getReader();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        res.write(value);
+      }
+    } else if (geminiRes.body) {
+      for await (const chunk of geminiRes.body) {
+        res.write(chunk);
+      }
+    } else {
+      throw new Error("Empty response body from Gemini API");
     }
+    
     res.end();
 
   } catch (error) {

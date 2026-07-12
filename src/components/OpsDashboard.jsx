@@ -52,13 +52,20 @@ const getContextByNER = (queryText, zones) => {
 const getCombinedPrompt = (zones, query) => {
   const context = getContextByNER(query, zones);
 
-  return `Q: how is transit?
-Data: Metro Line 2 is running at 4-minute intervals. Parking lots are 78% full.
-A: Transit is running smoothly. Metro Line 2 has a train every 4 minutes, and there's still plenty of parking since the lots are 78% full.
-
-Q: ${query}
-Data: ${context}
-A:`;
+  return [
+    { 
+      role: 'user', 
+      parts: [{ text: 'You are PITCHSIDE, a friendly stadium operations manager. You answer questions naturally and conversationally based on the live sensor data I provide. Do you understand?' }] 
+    },
+    { 
+      role: 'model', 
+      parts: [{ text: 'Yes, I understand! I am PITCHSIDE, the stadium operations manager. I will answer your questions conversationally and naturally using the live data provided. How can I help you today?' }] 
+    },
+    { 
+      role: 'user', 
+      parts: [{ text: `Live Stadium Data:\n${context}\n\nUser Question: ${query}` }] 
+    }
+  ];
 };
 
 const cleanResponse = (raw) => {
@@ -136,18 +143,22 @@ const OpsDashboard = () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{ role: 'user', parts: [{ text: combinedPrompt }] }],
-            generationConfig: { temperature: 0.6, maxOutputTokens: 250 },
+            contents: combinedPrompt,
+            generationConfig: { temperature: 0.6, maxOutputTokens: 2048 },
           }),
         });
         const data = await res.json();
         if (!data.error) {
-          const rawReply = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-          if (rawReply) {
-            setResponse(cleanResponse(rawReply));
-            setMode('live');
-            setIsLoading(false);
-            return;
+          const parts = data.candidates?.[0]?.content?.parts;
+          if (parts && parts.length > 0) {
+            const textPart = parts.find(p => p.thought !== true) || parts[parts.length - 1];
+            const rawReply = textPart?.text?.trim();
+            if (rawReply) {
+              setResponse(cleanResponse(rawReply));
+              setMode('live');
+              setIsLoading(false);
+              return;
+            }
           }
         }
       }

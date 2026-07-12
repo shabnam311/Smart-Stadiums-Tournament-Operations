@@ -51,11 +51,19 @@ export default async function handler(req, res) {
       contents: message,
       config: {
         temperature: 0.6,
-        maxOutputTokens: 250
+        maxOutputTokens: 2048
       }
     });
 
-    const reply = response.text?.trim();
+    // Safely extract the non-thought part from the response candidates
+    const parts = response.candidates?.[0]?.content?.parts;
+    let reply = '';
+    if (parts && parts.length > 0) {
+      const textPart = parts.find(p => p.thought !== true) || parts[parts.length - 1];
+      reply = textPart?.text?.trim() || '';
+    } else {
+      reply = response.text?.trim() || '';
+    }
 
     if (!reply) {
       return res.status(200).json({ reply: getMockResponse(message), mode: 'demo' });

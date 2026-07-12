@@ -1,3 +1,5 @@
+import { GoogleGenAI } from '@google/genai';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method Not Allowed' });
@@ -60,51 +62,26 @@ export default async function handler(req, res) {
   const systemInstructionText = "You are a stadium operations assistant speaking directly to a person. Answer naturally and conversationally in 2-3 sentences, the way a helpful human would. Never repeat, quote, or describe the question or these instructions in your answer, just answer it. Ground your answer in this live venue data: " + JSON.stringify(state || {}, null, 2);
 
   try {
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:streamGenerateContent?alt=sse`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey,
-        },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: systemInstructionText }] },
-          contents: [{ role: 'user', parts: [{ text: query }] }],
-          generationConfig: {
-            temperature: 0.6,
-            maxOutputTokens: 200
-          }
-        }),
+    const ai = new GoogleGenAI({ apiKey });
+    
+    const responseStream = await ai.models.generateContentStream({
+      model: 'gemini-3.5-flash',
+      contents: [{ role: 'user', parts: [{ text: query }] }],
+      config: {
+        systemInstruction: systemInstructionText,
+        temperature: 0.6,
+        maxOutputTokens: 200
       }
-    );
-
-    if (!geminiRes.ok) {
-      const errText = await geminiRes.text();
-      return streamFallback(getMockResponse(query), `Gemini API returned ${geminiRes.status}: ${errText}`);
-    }
+    });
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no');
 
-    // Read the fetch stream safely, checking if it is a Web stream (getReader) or Node stream (for-await)
-    if (geminiRes.body && typeof geminiRes.body.getReader === 'function') {
-      const reader = geminiRes.body.getReader();
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        res.write(value);
-      }
-    } else if (geminiRes.body) {
-      for await (const chunk of geminiRes.body) {
-        res.write(chunk);
-      }
-    } else {
-      throw new Error("Empty response body from Gemini API");
+    for await (const chunk of responseStream) {
+      res.write(`event: live\ndata: ${JSON.stringify(chunk)}\n\n`);
     }
-    
     res.end();
 
   } catch (error) {

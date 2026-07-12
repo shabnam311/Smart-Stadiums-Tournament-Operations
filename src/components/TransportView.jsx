@@ -1,61 +1,31 @@
 import React from 'react';
+import { transport } from '../data/stadiumState';
 
-const TransportView = () => {
-  return (
-    <main className="main">
-      <div className="main-head">
-        <div>
-          <div className="main-title">Transport & Sustainability</div>
-          <div className="main-sub">Live transit statuses and Eco-Hub points</div>
-        </div>
-      </div>
-      <section className="panels">
-        <div className="panel">
-          <div className="panel-head">
-            <div className="panel-title"><span className="bar"></span>TRANSIT NETWORK STATUS</div>
-          </div>
-          
-          <div className="resp-tag" style={{borderColor: 'var(--c-transit)', color: 'var(--c-transit)', marginBottom: '16px'}}>
-            <i style={{background: 'var(--c-transit)'}}></i>ACTIVE
-          </div>
-          <div className="resp-text" style={{marginBottom: '24px'}}>
-            <strong style={{color: 'var(--text)'}}>Metro Line A</strong><br/>
-            Trains arriving every 4 minutes. Normal crowd levels.
-          </div>
-
-          <div className="resp-tag" style={{borderColor: 'var(--c-incident)', color: 'var(--c-incident)', marginBottom: '16px'}}>
-            <i style={{background: 'var(--c-incident)'}}></i>DELAY
-          </div>
-          <div className="resp-text">
-            <strong style={{color: 'var(--text)'}}>Shuttle Bus North</strong><br/>
-            Traffic near Gate B causing 10-minute delays for shuttles.
-          </div>
-        </div>
-
-        <div className="panel">
-          <div className="panel-head">
-            <div className="panel-title"><span className="bar"></span>ECO-HUB & RECYCLING</div>
-          </div>
-          
-          <div className="resp-tag" style={{borderColor: 'var(--c-access)', color: 'var(--c-access)', marginBottom: '16px'}}>
-            <i style={{background: 'var(--c-access)'}}></i>ON TRACK
-          </div>
-          <div className="resp-text" style={{marginBottom: '24px'}}>
-            <strong style={{color: 'var(--text)'}}>Sustainability Goals</strong><br/>
-            Current waste diverted from landfill: 62%.
-          </div>
-
-          <div className="resp-tag" style={{borderColor: 'var(--c-transit)', color: 'var(--c-transit)', marginBottom: '16px'}}>
-            <i style={{background: 'var(--c-transit)'}}></i>ACTION NEEDED
-          </div>
-          <div className="resp-text">
-            <strong style={{color: 'var(--text)'}}>Recycling Stations</strong><br/>
-            Stations near Section G are currently full. Dispatching maintenance.
-          </div>
-        </div>
-      </section>
-    </main>
-  );
+const ICONS = {
+  transport: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="4" y="6" width="16" height="10" rx="2"/><circle cx="8" cy="18" r="1.5"/><circle cx="16" cy="18" r="1.5"/></svg>,
 };
+
+function TransportView() {
+  return (
+    <div>
+      <div className="page-head">
+        <div className="page-title">Transport</div>
+        <div className="page-sub">Live status of transit options serving the venue</div>
+      </div>
+      <div className="panel">
+        {transport.map((r, i) => (
+          <div className="list-row" key={i}>
+            <div className="list-icon">{ICONS.transport}</div>
+            <div>
+              <div className="list-title">{r.title}</div>
+              <div className="list-meta">{r.meta}</div>
+            </div>
+            <span className={"status-pill " + (r.ok ? "ok" : "warn")}>{r.status}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default TransportView;

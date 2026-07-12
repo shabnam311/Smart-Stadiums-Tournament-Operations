@@ -1,91 +1,64 @@
-import React, { useState, useEffect } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
-import venues from '../data/venues.json';
+import React from 'react';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+
+const ICONS = {
+  overview: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>,
+  ops: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>,
+  transport: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="4" y="6" width="16" height="10" rx="2"/><circle cx="8" cy="18" r="1.5"/><circle cx="16" cy="18" r="1.5"/></svg>,
+  accessibility: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="12" cy="5" r="2"/><path d="M6 9h12M12 9v6M9 21l3-6 3 6"/></svg>,
+};
+
+function TopBar({ mode }) {
+  return (
+    <header className="topbar">
+      <div className="brand">
+        <div className="brand-mark"></div>
+        <div className="brand-name">PITCHSIDE</div>
+      </div>
+      <div className="status-chip">
+        <span className={"status-dot" + (mode === "demo" ? " demo" : "")}></span>
+        <span>{mode === "demo" ? "Demo mode" : "Live"}</span>
+      </div>
+      <div className="topbar-right">
+        <span className="mono">Gate Complex B</span>
+        <span>·</span>
+        <span>FIFA World Cup 2026</span>
+      </div>
+    </header>
+  );
+}
+
+function Sidebar({ pathname, navigate }) {
+  const items = [
+    { id: "/", label: "Overview", icon: "overview" },
+    { id: "/ops", label: "Ops Intelligence", icon: "ops" },
+    { id: "/transport", label: "Transport", icon: "transport" },
+    { id: "/accessibility", label: "Accessibility", icon: "accessibility" },
+  ];
+  return (
+    <nav className="sidebar">
+      <div className="nav-section-label">Operations</div>
+      {items.map(item => (
+        <button key={item.id} className={"nav-btn" + (pathname === item.id ? " active" : "")} onClick={() => navigate(item.id)}>
+          {ICONS[item.icon]}
+          <span>{item.label}</span>
+        </button>
+      ))}
+    </nav>
+  );
+}
 
 const Layout = () => {
   const location = useLocation();
-  const [weather, setWeather] = useState('29°');
-  const [clock, setClock] = useState('--:--:--');
-  const activeVenue = venues[0];
-
-  useEffect(() => {
-    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${activeVenue.lat}&longitude=${activeVenue.lon}&current_weather=true`)
-      .then(res => res.json())
-      .then(data => {
-        if (data?.current_weather) {
-          setWeather(`${Math.round(data.current_weather.temperature)}°`);
-        }
-      })
-      .catch(() => {});
-  }, [activeVenue]);
-
-  useEffect(() => {
-    const tick = () => setClock(new Date().toLocaleTimeString('en-GB'));
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, []);
+  const navigate = useNavigate();
 
   return (
-    <div className="wrap">
-      <nav>
-        <div className="logo">
-          <div className="logo-mark"></div>
-          <div className="logo-text"><b>STADIUM</b>OPS</div>
-        </div>
-        <div className="nav-pills">
-          <div className="pill live"><span className="dot"></span>LIVE MATCH</div>
-        </div>
-        <div className="nav-links">
-          <Link to="/" className={location.pathname === '/' ? 'active' : ''}>Overview</Link>
-          <Link to="/transport" className={location.pathname === '/transport' ? 'active' : ''}>Transit</Link>
-          <Link to="/accessibility" className={location.pathname === '/accessibility' ? 'active' : ''}>Accessibility</Link>
-          <span className="clock">{clock}</span>
-        </div>
-      </nav>
-
-      {/* Hero only shows on the main page */}
-      {location.pathname === '/' && (
-        <section className="hero">
-          <div className="eyebrow">
-            <span className="rule"></span>
-            <span className="label">OPERATIONS INTELLIGENCE · FIFA WORLD CUP 2026</span>
-          </div>
-          <h1>Ask the stadium<br/><em>what happens next.</em></h1>
-          <p className="hero-sub">Built for venue operations staff during live matches. Query crowd flow, incidents, transit, and accessibility in plain language - get a decision with reasoning, not another dashboard.</p>
-
-          <div className="legend">
-            <div className="legend-item"><span className="legend-dot" style={{background:'var(--c-crowd)'}}></span><span>CROWD FLOW</span></div>
-            <div className="legend-item"><span className="legend-dot" style={{background:'var(--c-incident)'}}></span><span>INCIDENT</span></div>
-            <div className="legend-item"><span className="legend-dot" style={{background:'var(--c-transit)'}}></span><span>TRANSIT</span></div>
-            <div className="legend-item"><span className="legend-dot" style={{background:'var(--c-access)'}}></span><span>ACCESSIBILITY</span></div>
-          </div>
-        </section>
-      )}
-
-      <div style={{ marginTop: location.pathname === '/' ? '0' : '40px', minHeight: '60vh' }}>
-        <Outlet context={{ venue: activeVenue, weather, clock }} />
-      </div>
-
-      <section className="info-grid" style={{ marginTop: '40px' }}>
-        <div className="info-block">
-          <div className="label">MODEL & DATA</div>
-          <p>AI runs on <b>Google Gemma 4</b> via the Gemini API for rapid, context-aware reasoning. Weather data is pulled live via <b>Open-Meteo</b> ({weather} currently). Gracefully falls back to demo mode if limits are reached.</p>
-        </div>
-        <div className="info-block">
-          <div className="label">DEPLOYMENT</div>
-          <p>Static frontend deployed on <b>Vercel</b> with a <b>serverless proxy</b> for the model call, keeping API tokens completely hidden from the browser bundle.</p>
-        </div>
-      </section>
-
-      <footer>
-        <span>STADIUMOPS · 2026 · FIFA WORLD CUP</span>
-        <div className="foot-links">
-          <a href="https://github.com/shabnam311/Smart-Stadiums-Tournament-Operations" target="_blank" rel="noopener noreferrer">GITHUB</a>
-          <a href="#">MODEL CARD</a>
-          <a href="#">ABOUT</a>
-        </div>
-      </footer>
+    <div className="shell">
+      <TopBar mode="live" />
+      <Sidebar pathname={location.pathname} navigate={navigate} />
+      <main className="main">
+        <Outlet />
+      </main>
     </div>
   );
 };

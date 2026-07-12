@@ -1,61 +1,31 @@
 import React from 'react';
+import { accessibility } from '../data/stadiumState';
 
-const AccessibilityView = () => {
-  return (
-    <main className="main">
-      <div className="main-head">
-        <div>
-          <div className="main-title">Accessibility Features</div>
-          <div className="main-sub">Wheelchair routes, sensory rooms, and specialized assistance</div>
-        </div>
-      </div>
-      <section className="panels">
-        <div className="panel">
-          <div className="panel-head">
-            <div className="panel-title"><span className="bar"></span>ACCESSIBILITY ROUTES</div>
-          </div>
-          
-          <div className="resp-tag" style={{borderColor: 'var(--c-access)', color: 'var(--c-access)', marginBottom: '16px'}}>
-            <i style={{background: 'var(--c-access)'}}></i>OPERATIONAL
-          </div>
-          <div className="resp-text" style={{marginBottom: '24px'}}>
-            <strong style={{color: 'var(--text)'}}>Ramp Access - Gate 4</strong><br/>
-            Status: Clear and Operational. Nearest access to Section D.
-          </div>
-
-          <div className="resp-tag" style={{borderColor: 'var(--c-access)', color: 'var(--c-access)', marginBottom: '16px'}}>
-            <i style={{background: 'var(--c-access)'}}></i>OPERATIONAL
-          </div>
-          <div className="resp-text">
-            <strong style={{color: 'var(--text)'}}>Elevator Bank C</strong><br/>
-            Status: Operational. Servicing East Stand upper tiers.
-          </div>
-        </div>
-
-        <div className="panel">
-          <div className="panel-head">
-            <div className="panel-title"><span className="bar"></span>SENSORY ROOMS & ASSISTANCE</div>
-          </div>
-          
-          <div className="resp-tag" style={{borderColor: 'var(--c-crowd)', color: 'var(--c-crowd)', marginBottom: '16px'}}>
-            <i style={{background: 'var(--c-crowd)'}}></i>CAPACITY 40%
-          </div>
-          <div className="resp-text" style={{marginBottom: '24px'}}>
-            <strong style={{color: 'var(--text)'}}>Sensory Room A (West Concourse)</strong><br/>
-            Quiet zone maintained.
-          </div>
-
-          <div className="resp-tag" style={{borderColor: 'var(--c-crowd)', color: 'var(--c-crowd)', marginBottom: '16px'}}>
-            <i style={{background: 'var(--c-crowd)'}}></i>12 ACTIVE
-          </div>
-          <div className="resp-text">
-            <strong style={{color: 'var(--text)'}}>Multilingual Volunteers</strong><br/>
-            Highest demand in Spanish and Portuguese near Gate B.
-          </div>
-        </div>
-      </section>
-    </main>
-  );
+const ICONS = {
+  accessibility: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="12" cy="5" r="2"/><path d="M6 9h12M12 9v6M9 21l3-6 3 6"/></svg>,
 };
+
+function AccessibilityView() {
+  return (
+    <div>
+      <div className="page-head">
+        <div className="page-title">Accessibility</div>
+        <div className="page-sub">Step-free routes and assistance points</div>
+      </div>
+      <div className="panel">
+        {accessibility.map((r, i) => (
+          <div className="list-row" key={i}>
+            <div className="list-icon">{ICONS.accessibility}</div>
+            <div>
+              <div className="list-title">{r.title}</div>
+              <div className="list-meta">{r.meta}</div>
+            </div>
+            <span className={"status-pill " + (r.ok ? "ok" : "warn")}>{r.status}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default AccessibilityView;

@@ -45,7 +45,11 @@ cp .env.example .env
 ```
 Inside `.env`, set:
 ```env
-VITE_GEMINI_KEY=your_real_key_here
+# Required for local development direct streaming fallback (Vite)
+VITE_GEMINI_KEY=your_gemini_api_key_here
+
+# Required for local vercel dev server testing
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
 *(Ensure you do NOT commit your `.env` file to version control. It is already added to `.gitignore`).*
 
@@ -61,4 +65,6 @@ npm run test
 ```
 
 ## Deployment
-This project is configured for one-click deployment on **Vercel**. When deploying, ensure you add the `VITE_GEMINI_KEY` environment variable in your Vercel Project Settings under Environment Variables (Production & Preview).
+This project is configured for one-click deployment on **Vercel**. When deploying, ensure you add the **`GEMINI_API_KEY`** environment variable in your Vercel Project Settings under Environment Variables (check Production & Preview). 
+
+*(Note: The serverless proxy in `api/chat.js` supports four fallbacks `GEMINI_API_KEY`, `VITE_GEMINI_API_KEY`, `VITE_GEMINI_KEY`, and `GEMINI_KEY` for deployment resilience).*

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { getFullStateSnapshot } from '../data/stadiumState';
+import { getFullStateSnapshot, fetchLiveWeather } from '../data/stadiumState';
 
 const cleanResponse = (raw) => {
   if (!raw) return '';
@@ -49,6 +49,7 @@ function OpsDashboard() {
     const localApiKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_GEMINI_KEY;
 
     try {
+      const liveWeather = await fetchLiveWeather();
       let res;
       // Dual-path: If running locally in development mode with a key, direct-call Gemini to bypass Vite's lack of serverless proxy
       if (isDev && localApiKey) {
@@ -68,7 +69,7 @@ Here are examples of how to ground your answers in the data:
   Response: "Metro Line 4 is running smoothly at 4-minute intervals, but the Shuttle Bus is delayed by 6 minutes. I recommend directing exiting fans toward the Metro station to avoid delays."
 
 Live Venue Data:
-${JSON.stringify(getFullStateSnapshot(), null, 2)}`;
+${JSON.stringify(getFullStateSnapshot(liveWeather), null, 2)}`;
         
         res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:streamGenerateContent?alt=sse&key=${localApiKey}`, {
           method: 'POST',
@@ -87,7 +88,7 @@ ${JSON.stringify(getFullStateSnapshot(), null, 2)}`;
         res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query, state: getFullStateSnapshot() }),
+          body: JSON.stringify({ query, state: getFullStateSnapshot(liveWeather) }),
           signal: abortControllerRef.current.signal
         });
       }

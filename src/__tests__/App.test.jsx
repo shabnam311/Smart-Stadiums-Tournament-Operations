@@ -148,4 +148,56 @@ describe('Smart Stadium Application - Edge Cases', () => {
     );
     expect(screen.getByText(/Live status of transit options/i)).toBeInTheDocument();
   });
+
+  test('Ingestion: switching Event ID updates KPIs and does not crash', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <App />
+      </MemoryRouter>
+    );
+    const select = container.querySelector('#eventSelector');
+    expect(select).toBeInTheDocument();
+    
+    // Switch to Event 202
+    fireEvent.change(select, { target: { value: '202' } });
+    expect(screen.getByText(/Event ID 202/i)).toBeInTheDocument();
+  });
+
+  test('Ingestion: uploading invalid schema shows UI warning gracefully', async () => {
+    const { container } = render(
+      <MemoryRouter>
+        <App />
+      </MemoryRouter>
+    );
+    const uploadInput = container.querySelector('#uploadMetadata');
+    expect(uploadInput).toBeInTheDocument();
+
+    const file = new File(['Event_ID,Invalid_Column\n201,val'], 'invalid_metadata.csv', { type: 'text/csv' });
+    fireEvent.change(uploadInput, { target: { files: [file] } });
+
+    await waitFor(() => {
+      const errorDiv = container.querySelector('#ingestError');
+      expect(errorDiv).toBeInTheDocument();
+      expect(errorDiv).toHaveTextContent(/Invalid Schema/i);
+    });
+  });
+
+  test('Ingestion: uploading empty file raises warning', async () => {
+    const { container } = render(
+      <MemoryRouter>
+        <App />
+      </MemoryRouter>
+    );
+    const uploadInput = container.querySelector('#uploadMetadata');
+    expect(uploadInput).toBeInTheDocument();
+
+    const file = new File([''], 'empty.csv', { type: 'text/csv' });
+    fireEvent.change(uploadInput, { target: { files: [file] } });
+
+    await waitFor(() => {
+      const errorDiv = container.querySelector('#ingestError');
+      expect(errorDiv).toBeInTheDocument();
+      expect(errorDiv).toHaveTextContent(/Empty CSV file/i);
+    });
+  });
 });

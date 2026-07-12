@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { getFullStateSnapshot } from '../data/stadiumState';
 
 const cleanResponse = (raw) => {
@@ -19,6 +19,9 @@ function OpsDashboard() {
   const [resp, setResp] = useState(null);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState('live');
+  const [isTyping, setIsTyping] = useState(false);
+  const abortControllerRef = useRef(null);
+  const scrollRef = useRef(null);
 
   const sampleQueries = [
     "Is Gate C likely to congest before kickoff?",
@@ -28,36 +31,96 @@ function OpsDashboard() {
 
   const handleRunQuery = async () => {
     if (!query.trim()) return;
+    
+    if (loading && abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      setLoading(false);
+      setIsTyping(false);
+      return;
+    }
+
     setLoading(true);
-    setResp(null);
+    setIsTyping(true); // show typing indicator immediately
+    setResp("");
+    
+    abortControllerRef.current = new AbortController();
 
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query, state: getFullStateSnapshot() }),
+        signal: abortControllerRef.current.signal
       });
-      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let isFirstChunk = true;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        if (isFirstChunk) {
+          setIsTyping(false);
+          isFirstChunk = false;
+        }
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // keep incomplete line for next chunk
+
+        for (const line of lines) {
+          if (!line.startsWith('data:')) continue;
+          const jsonStr = line.slice(5).trim();
+          if (!jsonStr) continue;
+          
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const delta = parsed.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            if (delta) {
+              setResp(prev => prev + delta);
+              if (scrollRef.current) {
+                scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+              }
+            }
+          } catch (e) {
+            // ignore JSON parse errors for incomplete chunks
+          }
+        }
+      }
       
-      if (data.reply) {
-        setResp(cleanResponse(data.reply));
-        setMode(data.mode || 'live');
+      // Clean up final response text formatting after stream ends
+      setResp(prev => cleanResponse(prev));
+
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        setResp(prev => prev + " [Cancelled]");
       } else {
-        setResp('An error occurred. Please try again.');
+        console.error(err);
+        setResp('Connection failed.');
         setMode('demo');
       }
-    } catch (err) {
-      console.error(err);
-      setResp('Connection failed.');
-      setMode('demo');
     } finally {
       setLoading(false);
+      setIsTyping(false);
+      abortControllerRef.current = null;
     }
   };
 
   const handleClear = () => { 
+    if (loading && abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
     setQuery(""); 
     setResp(null); 
+    setLoading(false);
+    setIsTyping(false);
   };
 
   return (
@@ -74,28 +137,33 @@ function OpsDashboard() {
               value={query} 
               onChange={e => setQuery(e.target.value)} 
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleRunQuery(); } }}
+              disabled={loading}
             />
             <div className="chip-row">
               {sampleQueries.map(q => (
-                <button className="chip" key={q} onClick={() => setQuery(q)}>{q}</button>
+                <button className="chip" key={q} onClick={() => setQuery(q)} disabled={loading}>{q}</button>
               ))}
             </div>
             <div className="btn-row">
-              <button className="btn-primary" onClick={handleRunQuery} disabled={loading}>
-                {loading ? "Running…" : "Run query"}
+              <button 
+                className={loading ? "btn-secondary" : "btn-primary"} 
+                onClick={handleRunQuery}
+                style={{ backgroundColor: loading ? 'var(--c-incident)' : undefined }}
+              >
+                {loading ? "Stop Generation" : "Run query"}
               </button>
               <button className="btn-secondary" onClick={handleClear}>Clear</button>
             </div>
           </div>
-          <div className="resp-shell">
-            {!resp && !loading && <div className="resp-empty">Response will appear here</div>}
-            {loading && <div className="resp-empty">Generating response…</div>}
-            {resp && !loading && (
+          <div className="resp-shell" ref={scrollRef}>
+            {!resp && !isTyping && <div className="resp-empty">Response will appear here</div>}
+            {isTyping && <div className="resp-empty typing-indicator">· ·· ···</div>}
+            {(resp || (loading && !isTyping)) && (
               <div>
                 <div className={"resp-mode " + (mode === 'live' ? 'live' : '')}>
                   {mode === 'demo' ? 'Fallback' : 'Live response'}
                 </div>
-                <div className="resp-text">{resp}</div>
+                <div className="resp-text" style={{ whiteSpace: 'pre-wrap' }}>{resp}</div>
               </div>
             )}
           </div>

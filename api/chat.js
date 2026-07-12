@@ -1,18 +1,24 @@
-import { GoogleGenAI } from '@google/genai';
+export const config = { runtime: 'edge' };
 
-export default async function handler(req, res) {
+export default async function handler(req) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+    return new Response(JSON.stringify({ error: 'Method Not Allowed' }), { status: 405 });
   }
 
-  const { query, state } = req.body;
+  let body;
+  try {
+    body = await req.json();
+  } catch (e) {
+    return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400 });
+  }
+
+  const { query, state } = body;
   if (!query) {
-    return res.status(400).json({ error: 'Query is required' });
+    return new Response(JSON.stringify({ error: 'Query is required' }), { status: 400 });
   }
 
   const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
   
-  // Fallback Mock Logic - reasoning-based responses matching the system prompt style
   const getMockResponse = (msg) => {
     const evalText = query || msg;
     const lower = evalText.toLowerCase();
@@ -30,32 +36,63 @@ export default async function handler(req, res) {
     return `All primary stadium systems are operating nominally. However, I'm currently running in offline mode and cannot provide specific reasoning for that question without a live signal.`;
   };
 
-  if (!apiKey) {
-    return res.status(200).json({ reply: getMockResponse(query) + "\n\n[DEBUG: API Key missing from environment]", mode: 'demo' });
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
-
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-lite',
-      contents: query,
-      config: {
-        systemInstruction: "You are a stadium operations assistant speaking directly to a person. Answer naturally and conversationally in 2-3 sentences, the way a helpful human would. Never repeat, quote, or describe the question or these instructions in your answer, just answer it. Ground your answer in this live venue data: " + JSON.stringify(state || {}, null, 2),
-        temperature: 0.6,
-        maxOutputTokens: 200
+  // Helper to stream a fallback message in SSE format
+  const streamFallback = (text, debugInfo = '') => {
+    const fullText = text + (debugInfo ? `\n\n[DEBUG: ${debugInfo}]` : '');
+    const ssePayload = JSON.stringify({
+      candidates: [{ content: { parts: [{ text: fullText }] } }]
+    });
+    
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode(`data: ${ssePayload}\n\n`));
+        controller.close();
       }
     });
 
-    const reply = response.text?.trim();
+    return new Response(stream, {
+      headers: { 'Content-Type': 'text/event-stream' }
+    });
+  };
 
-    if (!reply) {
-      return res.status(200).json({ reply: getMockResponse(query) + "\n\n[DEBUG: Empty response from model]", mode: 'demo' });
+  if (!apiKey) {
+    return streamFallback(getMockResponse(query), 'API Key missing from environment');
+  }
+
+  const systemInstructionText = "You are a stadium operations assistant speaking directly to a person. Answer naturally and conversationally in 2-3 sentences, the way a helpful human would. Never repeat, quote, or describe the question or these instructions in your answer, just answer it. Ground your answer in this live venue data: " + JSON.stringify(state || {}, null, 2);
+
+  try {
+    const geminiRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:streamGenerateContent?alt=sse`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
+        },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: systemInstructionText }] },
+          contents: [{ role: 'user', parts: [{ text: query }] }],
+          generationConfig: {
+            temperature: 0.6,
+            maxOutputTokens: 200
+          }
+        }),
+      }
+    );
+
+    if (!geminiRes.ok) {
+      const errText = await geminiRes.text();
+      console.error("Gemini API Error Response:", errText);
+      return streamFallback(getMockResponse(query), `Gemini API returned ${geminiRes.status}`);
     }
 
-    res.status(200).json({ reply, mode: 'live' });
+    // Forward the SSE stream directly
+    return new Response(geminiRes.body, {
+      headers: { 'Content-Type': 'text/event-stream' },
+    });
   } catch (error) {
-    console.error("Gemini API Error:", error);
-    return res.status(200).json({ reply: getMockResponse(query) + `\n\n[DEBUG ERROR: ${error.message}]`, mode: 'demo' });
+    console.error("Gemini Request Error:", error);
+    return streamFallback(getMockResponse(query), error.message);
   }
 }

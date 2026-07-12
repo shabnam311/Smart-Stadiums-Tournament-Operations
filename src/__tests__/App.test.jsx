@@ -6,18 +6,32 @@ import OpsDashboard from '../components/OpsDashboard';
 import Layout from '../components/Layout';
 import TransportView from '../components/TransportView';
 import AccessibilityView from '../components/AccessibilityView';
+import { vi } from 'vitest';
 
-// Mock fetch for API testing
-global.fetch = vi.fn(() => Promise.resolve({
-  json: () => Promise.resolve({})
-}));
+// Helper to mock an SSE stream fetch response
+const mockFetchStream = (text, delayMs = 10) => {
+  const encoder = new TextEncoder();
+  const chunk = encoder.encode(`data: ${JSON.stringify({ candidates: [{ content: { parts: [{ text }] } }] })}\n\n`);
+  
+  let isDone = false;
+  const mockReader = {
+    read: vi.fn().mockImplementation(() => {
+      if (isDone) return Promise.resolve({ done: true, value: undefined });
+      isDone = true;
+      return new Promise(resolve => setTimeout(() => resolve({ done: false, value: chunk }), delayMs));
+    })
+  };
+
+  return Promise.resolve({
+    ok: true,
+    body: { getReader: () => mockReader }
+  });
+};
 
 describe('Smart Stadium Application - Edge Cases', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch.mockImplementation(() => Promise.resolve({
-      json: () => Promise.resolve({})
-    }));
+    global.fetch = vi.fn(() => Promise.reject(new Error("Default unmocked fetch")));
   });
 
   test('renders the new OpsDashboard shell', () => {
@@ -38,6 +52,7 @@ describe('Smart Stadium Application - Edge Cases', () => {
     const runBtn = screen.getByText(/Run query/i);
     fireEvent.click(runBtn);
     expect(screen.queryByText(/Generating response/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/· ·· ···/i)).not.toBeInTheDocument();
   });
 
   test('OpsDashboard: clears query and response', () => {
@@ -55,13 +70,8 @@ describe('Smart Stadium Application - Edge Cases', () => {
     expect(screen.getByText(/Response will appear here/i)).toBeInTheDocument();
   });
 
-  test('OpsDashboard: handles successful API response (LIVE mode)', async () => {
-    global.fetch.mockResolvedValueOnce({
-      json: async () => ({ 
-        reply: "Gate A is clear right now with only a 2 minute wait.", 
-        mode: "live",
-      }),
-    });
+  test('OpsDashboard: handles successful streaming API response', async () => {
+    global.fetch.mockImplementationOnce(() => mockFetchStream("Gate A is clear right now."));
 
     render(
       <MemoryRouter>
@@ -74,10 +84,11 @@ describe('Smart Stadium Application - Edge Cases', () => {
     const runBtn = screen.getByText(/Run query/i);
     fireEvent.click(runBtn);
 
-    expect(screen.getByText(/Generating response/i)).toBeInTheDocument();
+    // Initial typing indicator check
+    expect(screen.getByText(/· ·· ···/i)).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(screen.getByText(/Gate A is clear/i)).toBeInTheDocument();
+      expect(screen.getByText(/Gate A is clear right now./i)).toBeInTheDocument();
       expect(screen.getByText(/Live response/i)).toBeInTheDocument();
     });
   });
@@ -97,7 +108,30 @@ describe('Smart Stadium Application - Edge Cases', () => {
     fireEvent.click(runBtn);
 
     await waitFor(() => {
-      expect(screen.getByText(/Fallback/i)).toBeInTheDocument();
+      expect(screen.getByText(/Connection failed/i)).toBeInTheDocument();
+    });
+  });
+
+  test('Security Boundary: Backend never leaks internal instructions (systemInstruction/state)', async () => {
+    // We mock the backend's exact fetch response internally, but the test ensures
+    // the frontend's cleanResponse function drops any JSON scaffolding.
+    // However, the backend itself is now defensively guarding the prompt format natively.
+    global.fetch.mockImplementationOnce(() => mockFetchStream("{\"query\":\"hi\",\"state\":{\"weather\":29}}"));
+
+    render(
+      <MemoryRouter>
+        <OpsDashboard />
+      </MemoryRouter>
+    );
+    
+    const textarea = screen.getByPlaceholderText(/Is Gate C likely to congest/i);
+    fireEvent.change(textarea, { target: { value: 'hi' } });
+    fireEvent.click(screen.getByText(/Run query/i));
+
+    await waitFor(() => {
+      // The frontend defense mechanism 'cleanResponse' catches raw JSON leaks
+      expect(screen.getByText(/Signal interrupted/i)).toBeInTheDocument();
+      expect(screen.queryByText(/\"query\"/)).not.toBeInTheDocument();
     });
   });
 

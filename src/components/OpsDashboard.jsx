@@ -62,6 +62,8 @@ function OpsDashboard() {
       let buffer = '';
       let isFirstChunk = true;
 
+      let currentEventType = 'live';
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -76,7 +78,13 @@ function OpsDashboard() {
         buffer = lines.pop(); // keep incomplete line for next chunk
 
         for (const line of lines) {
+          if (line.startsWith('event:')) {
+            currentEventType = line.slice(6).trim();
+            if (currentEventType === 'fallback') setMode('demo');
+            if (currentEventType === 'live') setMode('live');
+          }
           if (!line.startsWith('data:')) continue;
+          
           const jsonStr = line.slice(5).trim();
           if (!jsonStr) continue;
           

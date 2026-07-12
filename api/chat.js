@@ -22,6 +22,10 @@ export default async function handler(req) {
   const getMockResponse = (msg) => {
     const evalText = query || msg;
     const lower = evalText.toLowerCase();
+    
+    if (lower.match(/^(hi|hello|hey|greetings)(\s|$)/))
+      return `Hello! All stadium systems are currently operating nominally, though I'm running in offline mode. What operations data can I help you check?`;
+      
     if (lower.includes('gate c'))
       return `Gate C entry rate is currently 22 per minute against a comfortable limit of 15. I would recommend opening the auxiliary turnstiles C4 to C6 for the next 20 minutes to ease the backlog.`;
     if (lower.includes('second half') || lower.includes('fullest') || lower.includes('section g'))
@@ -38,14 +42,16 @@ export default async function handler(req) {
 
   // Helper to stream a fallback message in SSE format
   const streamFallback = (text, debugInfo = '') => {
-    const fullText = text + (debugInfo ? `\n\n[DEBUG: ${debugInfo}]` : '');
+    if (debugInfo) {
+      console.error(`[Stream Fallback Triggered]: ${debugInfo}`);
+    }
     const ssePayload = JSON.stringify({
-      candidates: [{ content: { parts: [{ text: fullText }] } }]
+      candidates: [{ content: { parts: [{ text: text }] } }]
     });
     
     const stream = new ReadableStream({
       start(controller) {
-        controller.enqueue(new TextEncoder().encode(`data: ${ssePayload}\n\n`));
+        controller.enqueue(new TextEncoder().encode(`event: fallback\ndata: ${ssePayload}\n\n`));
         controller.close();
       }
     });
@@ -83,16 +89,23 @@ export default async function handler(req) {
 
     if (!geminiRes.ok) {
       const errText = await geminiRes.text();
-      console.error("Gemini API Error Response:", errText);
-      return streamFallback(getMockResponse(query), `Gemini API returned ${geminiRes.status}`);
+      return streamFallback(getMockResponse(query), `Gemini API returned ${geminiRes.status}: ${errText}`);
     }
 
-    // Forward the SSE stream directly
-    return new Response(geminiRes.body, {
+    // Intercept stream to inject named event "live"
+    const transformStream = new TransformStream({
+      transform(chunk, controller) {
+        const text = new TextDecoder().decode(chunk);
+        // Replace all "data: " with "event: live\ndata: "
+        const modified = text.replace(/^data:/gm, 'event: live\ndata:');
+        controller.enqueue(new TextEncoder().encode(modified));
+      }
+    });
+
+    return new Response(geminiRes.body.pipeThrough(transformStream), {
       headers: { 'Content-Type': 'text/event-stream' },
     });
   } catch (error) {
-    console.error("Gemini Request Error:", error);
-    return streamFallback(getMockResponse(query), error.message);
+    return streamFallback(getMockResponse(query), `Gemini Request Error: ${error.message}`);
   }
 }

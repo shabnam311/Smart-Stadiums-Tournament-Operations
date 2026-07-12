@@ -1,7 +1,4 @@
 import React, { useState, useEffect } from 'react';
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_KEY;
-const MODEL = 'gemma-4-26b-a4b-it';
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
 const getContextByNER = (queryText, zones) => {
   const lower = queryText.toLowerCase();
@@ -47,25 +44,6 @@ const getContextByNER = (queryText, zones) => {
   }
 
   return contextParts.join('\n');
-};
-
-const getCombinedPrompt = (zones, query) => {
-  const context = getContextByNER(query, zones);
-
-  return [
-    { 
-      role: 'user', 
-      parts: [{ text: 'You are PITCHSIDE, a friendly stadium operations manager. You answer questions naturally and conversationally based on the live sensor data I provide. Do you understand?' }] 
-    },
-    { 
-      role: 'model', 
-      parts: [{ text: 'Yes, I understand! I am PITCHSIDE, the stadium operations manager. I will answer your questions conversationally and naturally using the live data provided. How can I help you today?' }] 
-    },
-    { 
-      role: 'user', 
-      parts: [{ text: `Live Stadium Data:\n${context}\n\nUser Question: ${query}` }] 
-    }
-  ];
 };
 
 const cleanResponse = (raw) => {
@@ -135,44 +113,22 @@ const OpsDashboard = () => {
     setResponse(null);
 
     try {
-      const combinedPrompt = getCombinedPrompt(zones, query);
-      
-      // Try the direct Google REST API first (client-side)
-      if (GEMINI_API_KEY) {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: combinedPrompt,
-            generationConfig: { temperature: 0.6, maxOutputTokens: 2048 },
-          }),
-        });
-        const data = await res.json();
-        if (!data.error) {
-          const parts = data.candidates?.[0]?.content?.parts;
-          if (parts && parts.length > 0) {
-            const textPart = parts.find(p => p.thought !== true) || parts[parts.length - 1];
-            const rawReply = textPart?.text?.trim();
-            if (rawReply) {
-              setResponse(cleanResponse(rawReply));
-              setMode('live');
-              setIsLoading(false);
-              return;
-            }
-          }
-        }
-      }
-      // Fallback to serverless proxy
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: combinedPrompt, query }),
+        body: JSON.stringify({ message: query, context: getContextByNER(query, zones) }),
       });
       const data = await res.json();
-      setResponse(cleanResponse(data.reply));
-      setMode(data.mode || 'demo');
-    } catch {
-      setResponse('Temporary signal loss from venue sensors. Please retry your query in a moment.');
+      if (data.reply) {
+        setResponse(cleanResponse(data.reply));
+        setMode(data.mode || 'live');
+      } else {
+        setResponse('An error occurred. Please try again.');
+        setMode('demo');
+      }
+    } catch (err) {
+      console.error(err);
+      setResponse('Connection failed.');
       setMode('demo');
     } finally {
       setIsLoading(false);
@@ -268,7 +224,7 @@ const OpsDashboard = () => {
               <div className="resp-text">{response}</div>
               <div className="resp-meta">
                 <span>SOURCE: {mode === 'demo' ? 'Local Engine' : 'Google GenAI'}</span>
-                <span>MODEL: {MODEL}</span>
+                <span>MODEL: gemini-2.0-flash</span>
                 <span>STATUS: {mode === 'demo' ? 'Secure (Local)' : 'Secure'}</span>
               </div>
             </div>

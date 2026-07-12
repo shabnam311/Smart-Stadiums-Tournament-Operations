@@ -5,7 +5,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { message, query } = req.body;
+  const { message, query, context = '' } = req.body;
   if (!message) {
     return res.status(400).json({ error: 'Message is required' });
   }
@@ -47,23 +47,16 @@ export default async function handler(req, res) {
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemma-4-26b-a4b-it',
+      model: 'gemini-2.0-flash',
       contents: message,
       config: {
+        systemInstruction: "You are a stadium operations assistant speaking directly to a person. Answer naturally and conversationally in 2-3 sentences, the way a helpful human would. Never repeat, quote, or describe the question or these instructions in your answer, just answer it. Ground your answer in this live venue data: " + context,
         temperature: 0.6,
-        maxOutputTokens: 2048
+        maxOutputTokens: 200
       }
     });
 
-    // Safely extract the non-thought part from the response candidates
-    const parts = response.candidates?.[0]?.content?.parts;
-    let reply = '';
-    if (parts && parts.length > 0) {
-      const textPart = parts.find(p => p.thought !== true) || parts[parts.length - 1];
-      reply = textPart?.text?.trim() || '';
-    } else {
-      reply = response.text?.trim() || '';
-    }
+    const reply = response.text?.trim();
 
     if (!reply) {
       return res.status(200).json({ reply: getMockResponse(message), mode: 'demo' });

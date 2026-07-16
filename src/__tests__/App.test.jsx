@@ -150,12 +150,12 @@ describe('Smart Stadium Application - Edge Cases', () => {
   });
 
   test('Ingestion: switching Event ID updates KPIs and does not crash', () => {
-    const { container } = render(
+    render(
       <MemoryRouter>
         <App />
       </MemoryRouter>
     );
-    const select = container.querySelector('#eventSelector');
+    const select = screen.getByLabelText(/Active World Cup Event:/i);
     expect(select).toBeInTheDocument();
     
     // Switch to Event 202
@@ -169,7 +169,7 @@ describe('Smart Stadium Application - Edge Cases', () => {
         <App />
       </MemoryRouter>
     );
-    const uploadInput = container.querySelector('#uploadMetadata');
+    const uploadInput = screen.getByLabelText(/1\. Event Metadata CSV/i);
     expect(uploadInput).toBeInTheDocument();
 
     const file = new File(['Event_ID,Invalid_Column\n201,val'], 'invalid_metadata.csv', { type: 'text/csv' });
@@ -188,7 +188,7 @@ describe('Smart Stadium Application - Edge Cases', () => {
         <App />
       </MemoryRouter>
     );
-    const uploadInput = container.querySelector('#uploadMetadata');
+    const uploadInput = screen.getByLabelText(/1\. Event Metadata CSV/i);
     expect(uploadInput).toBeInTheDocument();
 
     const file = new File([''], 'empty.csv', { type: 'text/csv' });
@@ -200,4 +200,18 @@ describe('Smart Stadium Application - Edge Cases', () => {
       expect(errorDiv).toHaveTextContent(/Empty CSV file/i);
     });
   });
+});
+
+test('Accessibility: critical a11y scaffolding (skip-link, query label) exists', () => {
+  render(
+    <MemoryRouter initialEntries={['/ops']}>
+      <App />
+    </MemoryRouter>
+  );
+  // Skip link exists
+  expect(screen.getByText(/Skip to main content/i)).toBeInTheDocument();
+  
+  // Query label associated with textarea
+  const queryArea = screen.getByLabelText(/Enter operations query/i);
+  expect(queryArea).toBeInTheDocument();
 });

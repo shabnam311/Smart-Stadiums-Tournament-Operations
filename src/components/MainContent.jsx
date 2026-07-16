@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   subscribe, 
   activeEventId, 
@@ -13,7 +13,7 @@ function MainContent() {
   const colors = { ok: "var(--turf)", warn: "var(--amber)", high: "var(--red)" };
   
   // Local state listener for stadiumState updates
-  const [, setTick] = useState(0);
+  const [tick, setTick] = useState(0);
   useEffect(() => {
     return subscribe(() => setTick(t => t + 1));
   }, []);
@@ -28,12 +28,18 @@ function MainContent() {
     return "ok";
   };
 
-  const density = zones.map(z => {
-    const pct = Math.round((z.occ / z.cap) * 100);
-    return { name: z.name, pct, level: getLevel(pct) };
-  });
+  const density = useMemo(() => {
+    const _d = tick;
+    return zones.map(z => {
+      const pct = Math.round((z.occ / z.cap) * 100);
+      return { name: z.name, pct, level: getLevel(pct) };
+    });
+  }, [tick]);
 
-  const highIncidents = incidents.filter(i => i.sev === 'high' || i.sev === 'med').length;
+  const highIncidents = useMemo(() => {
+    const _d = tick;
+    return incidents.filter(i => i.sev === 'high' || i.sev === 'med').length;
+  }, [tick]);
 
   const handleFileUpload = (type, file) => {
     if (!file) return;
@@ -91,10 +97,15 @@ function MainContent() {
           <div className="kpi-value">{kpis.staffOnDuty}</div>
           <div className="kpi-delta">of {kpis.staffRostered} rostered</div>
         </div>
+        <div className="kpi">
+          <div className="kpi-label">Waste Diverted</div>
+          <div className="kpi-value">{kpis.wasteDiverted || 62}%</div>
+          <div className="kpi-delta up">Target 60%</div>
+        </div>
       </div>
 
       {/* CSV Ingest & Controls Panel */}
-      <div className="panel" style={{ border: '1px solid var(--border-color)', background: 'rgba(255,255,255,0.02)' }}>
+      <div className="panel" style={{ border: '1px solid var(--line)', background: 'rgba(255,255,255,0.02)' }}>
         <div className="panel-head">
           <div className="panel-title">Ingest Operations Data</div>
           <span className="tag">Live simulation settings</span>
@@ -103,15 +114,15 @@ function MainContent() {
           
           {/* Active Event Dropdown */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <label style={{ fontSize: '14px', color: 'var(--c-zinc-400)', minWidth: '130px' }}>Active World Cup Event:</label>
+            <label htmlFor="eventSelector" style={{ fontSize: '14px', color: 'var(--text-dim)', minWidth: '130px' }}>Active World Cup Event:</label>
             <select 
               id="eventSelector"
               value={activeEventId} 
               onChange={e => setEventId(Number(e.target.value))}
               style={{
-                background: 'var(--c-zinc-800)',
-                color: 'var(--c-zinc-100)',
-                border: '1px solid var(--c-zinc-700)',
+                background: 'var(--surface-2)',
+                color: 'var(--text)',
+                border: '1px solid var(--line)',
                 padding: '6px 12px',
                 borderRadius: '6px',
                 cursor: 'pointer'
@@ -121,19 +132,19 @@ function MainContent() {
                 <option key={id} value={id}>Event ID {id}</option>
               ))}
             </select>
-            <span style={{ fontSize: '12px', color: 'var(--c-zinc-500)' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-faint)' }}>
               (Loads specific gate wait times, staff levels & congestion points from event_metadata.csv)
             </span>
           </div>
 
-          <hr style={{ border: '0', borderTop: '1px solid var(--c-zinc-800)', margin: '5px 0' }} />
+          <hr style={{ border: '0', borderTop: '1px solid var(--line)', margin: '5px 0' }} />
 
           {/* CSV File Uploaders */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '15px' }}>
             
             {/* Metadata Upload */}
-            <div style={{ background: 'rgba(255,255,255,0.01)', padding: '15px', borderRadius: '8px', border: '1px dashed var(--c-zinc-800)' }}>
-              <div style={{ fontWeight: '600', fontSize: '13px', marginBottom: '8px' }}>1. Event Metadata CSV</div>
+            <div style={{ background: 'rgba(255,255,255,0.01)', padding: '15px', borderRadius: '8px', border: '1px dashed var(--line)' }}>
+              <label htmlFor="uploadMetadata" style={{ display: 'block', fontWeight: '600', fontSize: '13px', marginBottom: '8px', cursor: 'pointer' }}>1. Event Metadata CSV</label>
               <input 
                 type="file" 
                 accept=".csv"
@@ -141,14 +152,14 @@ function MainContent() {
                 onChange={e => handleFileUpload('metadata', e.target.files[0])}
                 style={{ fontSize: '11px', display: 'block', width: '100%' }}
               />
-              <span style={{ fontSize: '10px', color: 'var(--c-zinc-500)', display: 'block', marginTop: '5px' }}>
+              <span style={{ fontSize: '10px', color: 'var(--text-faint)', display: 'block', marginTop: '5px' }}>
                 Required: Event_ID, Staff_On_Duty, Gate_Status, Alerts
               </span>
             </div>
 
             {/* Clusters Upload */}
-            <div style={{ background: 'rgba(255,255,255,0.01)', padding: '15px', borderRadius: '8px', border: '1px dashed var(--c-zinc-800)' }}>
-              <div style={{ fontWeight: '600', fontSize: '13px', marginBottom: '8px' }}>2. Seat Clusters CSV</div>
+            <div style={{ background: 'rgba(255,255,255,0.01)', padding: '15px', borderRadius: '8px', border: '1px dashed var(--line)' }}>
+              <label htmlFor="uploadClusters" style={{ display: 'block', fontWeight: '600', fontSize: '13px', marginBottom: '8px', cursor: 'pointer' }}>2. Seat Clusters CSV</label>
               <input 
                 type="file" 
                 accept=".csv"
@@ -156,14 +167,14 @@ function MainContent() {
                 onChange={e => handleFileUpload('clusters', e.target.files[0])}
                 style={{ fontSize: '11px', display: 'block', width: '100%' }}
               />
-              <span style={{ fontSize: '10px', color: 'var(--c-zinc-500)', display: 'block', marginTop: '5px' }}>
+              <span style={{ fontSize: '10px', color: 'var(--text-faint)', display: 'block', marginTop: '5px' }}>
                 Required: Event_ID, Seat_ID, People_Count, Zone_Capacity
               </span>
             </div>
 
             {/* Edges Upload */}
-            <div style={{ background: 'rgba(255,255,255,0.01)', padding: '15px', borderRadius: '8px', border: '1px dashed var(--c-zinc-800)' }}>
-              <div style={{ fontWeight: '600', fontSize: '13px', marginBottom: '8px' }}>3. Movement Edges CSV</div>
+            <div style={{ background: 'rgba(255,255,255,0.01)', padding: '15px', borderRadius: '8px', border: '1px dashed var(--line)' }}>
+              <label htmlFor="uploadEdges" style={{ display: 'block', fontWeight: '600', fontSize: '13px', marginBottom: '8px', cursor: 'pointer' }}>3. Movement Edges CSV</label>
               <input 
                 type="file" 
                 accept=".csv"
@@ -171,7 +182,7 @@ function MainContent() {
                 onChange={e => handleFileUpload('edges', e.target.files[0])}
                 style={{ fontSize: '11px', display: 'block', width: '100%' }}
               />
-              <span style={{ fontSize: '10px', color: 'var(--c-zinc-500)', display: 'block', marginTop: '5px' }}>
+              <span style={{ fontSize: '10px', color: 'var(--text-faint)', display: 'block', marginTop: '5px' }}>
                 Required: Event_ID, Source_Seat, Target_Seat, Congestion_Level
               </span>
             </div>
@@ -180,7 +191,7 @@ function MainContent() {
 
           {/* Upload Status Messaging */}
           {ingestError && (
-            <div id="ingestError" style={{ padding: '10px 15px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--c-incident)', borderRadius: '6px', fontSize: '13px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+            <div id="ingestError" style={{ padding: '10px 15px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--red)', borderRadius: '6px', fontSize: '13px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
               ⚠ <b>Ingestion Error:</b> {ingestError}
             </div>
           )}

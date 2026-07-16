@@ -51,12 +51,15 @@ function validateColumns(data, required) {
 function recomputeState() {
   if (parsedEventMetadata.length === 0) return;
 
-  // 1. Find active event metadata
-  const activeEvent = parsedEventMetadata.find(row => Number(row.Event_ID) === Number(activeEventId)) || parsedEventMetadata[0];
+  // 1. Find active event metadata - O(1) Map Lookup
+  const eventMap = new Map(parsedEventMetadata.map(row => [Number(row.Event_ID), row]));
+  const activeEvent = eventMap.get(Number(activeEventId)) || parsedEventMetadata[0];
   if (!activeEvent) return;
 
   // 2. Filter seat clusters for active event to compute zones
   const activeSeats = parsedSeatClusters.filter(row => Number(row.Event_ID) === Number(activeEventId));
+  // O(1) Map indexing to prevent nested linear scans
+  const seatMap = new Map(activeSeats.map(row => [row.Seat_ID, row]));
   
   // Group seats C01-C50 into 5 zones
   const defaultZones = [
@@ -73,7 +76,7 @@ function recomputeState() {
 
     for (let i = zoneDef.start; i <= zoneDef.end; i++) {
       const seatId = `C${String(i).padStart(2, '0')}`;
-      const seatRow = activeSeats.find(row => row.Seat_ID === seatId);
+      const seatRow = seatMap.get(seatId);
       if (seatRow) {
         occ += Number(seatRow.People_Count) || 0;
         cap += Number(seatRow.Zone_Capacity) || 1200; // default cap if missing
@@ -185,7 +188,8 @@ function recomputeState() {
     avgEntryWaitDelta: Number(activeEvent["Evacuation_Time(min)"]) > 4.5 ? 1.5 : -1.5,
     openIncidents: incidents.filter(i => i.sev === 'high' || i.sev === 'med').length,
     staffOnDuty: Number(activeEvent.Staff_On_Duty) || 128,
-    staffRostered: (Number(activeEvent.Staff_On_Duty) || 128) + 12
+    staffRostered: (Number(activeEvent.Staff_On_Duty) || 128) + 12,
+    wasteDiverted: 60 + (Number(activeEvent["Sellout_Rate(%)"]) || 90) % 9
   };
 }
 
@@ -205,7 +209,18 @@ export function parseAndLoadCSV(type, csvText) {
     throw new Error(`CSV parsing failed: ${result.errors[0].message}`);
   }
 
-  const parsed = result.data;
+  // Sanitize and truncate string values to guard against prompt injection or buffer issues
+  const parsed = result.data.map(row => {
+    const cleaned = {};
+    for (const [key, value] of Object.entries(row)) {
+      if (typeof value === 'string') {
+        cleaned[key] = value.slice(0, 200).replace(/[<>]/g, '');
+      } else {
+        cleaned[key] = value;
+      }
+    }
+    return cleaned;
+  });
 
   if (type === 'metadata') {
     const required = ['Event_ID', 'Staff_On_Duty', 'Gate_Status', 'Alerts', 'Total_Attendance', 'Evacuation_Time(min)'];

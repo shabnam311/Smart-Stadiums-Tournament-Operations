@@ -8,16 +8,13 @@ const cleanResponse = (raw) => {
     .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold
     .replace(/\*(.*?)\*/g, '$1') // Remove italics
     .trim();
-  // Check if it's a JSON leak rather than simple prose starting with { or [
-  if (text.startsWith('{') || text.startsWith('[')) {
-    try {
-      const parsed = JSON.parse(text);
-      if (parsed && (parsed.query !== undefined || parsed.state !== undefined || parsed.systemInstruction !== undefined)) {
-        return 'Signal interrupted. Please try again.';
-      }
-    } catch {
-      // Not valid JSON, keep it
+  try {
+    const parsed = JSON.parse(text);
+    if (parsed && typeof parsed === 'object' && (parsed.query !== undefined || parsed.state !== undefined || parsed.systemInstruction !== undefined)) {
+      return 'Signal interrupted. Please try again.';
     }
+  } catch {
+    // Not valid JSON, keep it
   }
   return text;
 };
